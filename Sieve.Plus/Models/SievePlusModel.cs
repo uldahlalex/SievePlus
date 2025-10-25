@@ -91,65 +91,9 @@ namespace Sieve.Plus.Models
                 return null;
             }
 
-            // Check if the filter string contains OR separator
-            if (!Regex.IsMatch(Filters, OrSeparatorPattern))
-            {
-                // No OR logic, return single group with all filters (backward compatible)
-                var parsed = GetFiltersParsed();
-                return parsed == null ? null : new List<List<TFilterTerm>> { parsed };
-            }
-
-            // Split by OR separator (||)
-            var orGroups = Regex.Split(Filters, OrSeparatorPattern);
-            var result = new List<List<TFilterTerm>>();
-
-            foreach (var orGroup in orGroups)
-            {
-                if (string.IsNullOrWhiteSpace(orGroup))
-                {
-                    continue;
-                }
-
-                var groupFilters = new List<TFilterTerm>();
-
-                // Each OR group can contain multiple AND filters (comma-separated)
-                foreach (var filter in Regex.Split(orGroup.Trim(), EscapedCommaPattern))
-                {
-                    if (string.IsNullOrWhiteSpace(filter))
-                    {
-                        continue;
-                    }
-
-                    var filterValue = filter.Replace(EscapedComma, ",");
-
-                    if (filter.StartsWith("("))
-                    {
-                        var lastParenIndex = filterValue.LastIndexOf(")", StringComparison.Ordinal) + 1;
-                        var filterOpAndVal = filterValue.Substring(lastParenIndex);
-                        var subFilters = filterValue.Replace(filterOpAndVal, "").Replace("(", "").Replace(")", "");
-                        var filterTerm = new TFilterTerm
-                        {
-                            Filter = subFilters + filterOpAndVal
-                        };
-                        groupFilters.Add(filterTerm);
-                    }
-                    else
-                    {
-                        var filterTerm = new TFilterTerm
-                        {
-                            Filter = filterValue
-                        };
-                        groupFilters.Add(filterTerm);
-                    }
-                }
-
-                if (groupFilters.Count > 0)
-                {
-                    result.Add(groupFilters);
-                }
-            }
-
-            return result.Count > 0 ? result : null;
+            // Use the new FilterParser for enhanced parentheses support
+            var parser = new Services.FilterParser<TFilterTerm>();
+            return parser.Parse(Filters);
         }
 
         public List<TSortTerm> GetSortsParsed()

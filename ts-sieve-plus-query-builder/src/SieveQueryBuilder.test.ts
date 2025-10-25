@@ -614,6 +614,112 @@ describe('SieveQueryBuilder', () => {
     });
   });
 
+  describe('Parentheses grouping', () => {
+    it('should generate parentheses with beginGroup/endGroup', () => {
+      const query = SieveQueryBuilder.create<Book>()
+        .beginGroup()
+          .filterEquals('title', 'Book A')
+          .or()
+          .filterEquals('title', 'Book B')
+        .endGroup()
+        .filterGreaterThan('pages', 100)
+        .buildFiltersString();
+
+      expect(query).toBe('(title==Book A || title==Book B),pages>100');
+    });
+
+    it('should generate parentheses with filterWithAlternatives', () => {
+      const query = SieveQueryBuilder.create<Book>()
+        .filterWithAlternatives(
+          'title',
+          ['Book A', 'Book B', 'Book C'],
+          (b) => b.filterGreaterThan('pages', 200)
+        )
+        .buildFiltersString();
+
+      expect(query).toBe('(title==Book A || title==Book B || title==Book C),pages>200');
+    });
+
+    it('should handle filterWithAlternatives without shared constraints', () => {
+      const query = SieveQueryBuilder.create<Book>()
+        .filterWithAlternatives('title', ['Book A', 'Book B'])
+        .buildFiltersString();
+
+      expect(query).toBe('(title==Book A || title==Book B)');
+    });
+
+    it('should support simple or() method', () => {
+      const query = SieveQueryBuilder.create<Book>()
+        .filterEquals('title', 'Book A')
+        .or()
+        .filterEquals('title', 'Book B')
+        .buildFiltersString();
+
+      expect(query).toBe('title==Book A || title==Book B');
+    });
+
+    it('should maintain backward compatibility - no parentheses without groups', () => {
+      const query = SieveQueryBuilder.create<Book>()
+        .filterEquals('title', 'Book A')
+        .filterGreaterThan('pages', 100)
+        .buildFiltersString();
+
+      expect(query).toBe('title==Book A,pages>100');
+    });
+
+    it('should throw error on unmatched beginGroup', () => {
+      const builder = SieveQueryBuilder.create<Book>()
+        .beginGroup()
+          .filterEquals('title', 'Book A');
+
+      expect(() => builder.buildFiltersString()).toThrow('Unmatched beginGroup()');
+    });
+
+    it('should throw error on unmatched endGroup', () => {
+      const builder = SieveQueryBuilder.create<Book>();
+
+      expect(() => builder.endGroup()).toThrow('endGroup() called without matching beginGroup()');
+    });
+
+    it('should handle nested groups', () => {
+      const query = SieveQueryBuilder.create<Book>()
+        .beginGroup()
+          .beginGroup()
+            .filterEquals('title', 'A')
+            .or()
+            .filterEquals('title', 'B')
+          .endGroup()
+          .filterGreaterThan('pages', 100)
+        .endGroup()
+        .filterLessThan('pages', 500)
+        .buildFiltersString();
+
+      expect(query).toBe('((title==A || title==B),pages>100),pages<500');
+    });
+
+    it('should handle complex pricerunner-style query', () => {
+      interface Computer {
+        processor: string;
+        price: number;
+        screenSize: number;
+      }
+
+      const query = SieveQueryBuilder.create<Computer>()
+        .beginGroup()
+          .filterEquals('processor', 'Intel i9')
+          .or()
+          .filterEquals('processor', 'AMD Ryzen 9')
+        .endGroup()
+        .filterGreaterThanOrEqual('price', 1000)
+        .filterLessThanOrEqual('price', 2000)
+        .filterGreaterThanOrEqual('screenSize', 14)
+        .filterLessThanOrEqual('screenSize', 16)
+        .buildFiltersString();
+
+      expect(query).toBe('(processor==Intel i9 || processor==AMD Ryzen 9),price>=1000,price<=2000,screenSize>=14,screenSize<=16');
+    });
+  });
+
   describe('parseQueryString', () => {
     it('should parse filters from query string', () => {
       const queryString = 'filters=name@=Bob,id==123&page=1&pageSize=10';
@@ -737,6 +843,410 @@ describe('SieveQueryBuilder', () => {
       expect(result.sorts).toBe('name');
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(10);
+    });
+  });
+
+  describe('Introspection methods', () => {
+    describe('getFilters', () => {
+      it('should return empty array when no filters', () => {
+        const builder = SieveQueryBuilder.create<Author>();
+        const filters = builder.getFilters();
+
+        expect(filters).toEqual([]);
+      });
+
+      it('should parse single filter into FilterInfo', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob');
+
+        const filters = builder.getFilters();
+
+        expect(filters).toHaveLength(1);
+        expect(filters[0].propertyName).toBe('name');
+        expect(filters[0].operator).toBe('==');
+        expect(filters[0].value).toBe('Bob');
+        expect(filters[0].originalFilter).toBe('name==Bob');
+      });
+
+      it('should parse multiple filters', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterContains('name', 'Bob')
+          .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'));
+
+        const filters = builder.getFilters();
+
+        expect(filters).toHaveLength(2);
+        expect(filters[0].propertyName).toBe('name');
+        expect(filters[0].operator).toBe('@=');
+        expect(filters[0].value).toBe('Bob');
+        expect(filters[1].propertyName).toBe('createdat');
+        expect(filters[1].operator).toBe('>=');
+      });
+
+      it('should parse all filter operators correctly', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('id', '1')
+          .filterNotEquals('id', '2')
+          .filterContains('name', 'Bob')
+          .filterStartsWith('name', 'Al')
+          .filterGreaterThan('createdat', new Date('2024-01-01'))
+          .filterLessThan('createdat', new Date('2024-12-31'))
+          .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
+          .filterLessThanOrEqual('createdat', new Date('2024-12-31'));
+
+        const filters = builder.getFilters();
+
+        expect(filters).toHaveLength(8);
+        expect(filters[0].operator).toBe('==');
+        expect(filters[1].operator).toBe('!=');
+        expect(filters[2].operator).toBe('@=');
+        expect(filters[3].operator).toBe('_=');
+        expect(filters[4].operator).toBe('>');
+        expect(filters[5].operator).toBe('<');
+        expect(filters[6].operator).toBe('>=');
+        expect(filters[7].operator).toBe('<=');
+      });
+
+      it('should parse custom property filters', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterByName('BooksCount', '>=', 5);
+
+        const filters = builder.getFilters();
+
+        expect(filters).toHaveLength(1);
+        expect(filters[0].propertyName).toBe('BooksCount');
+        expect(filters[0].operator).toBe('>=');
+        expect(filters[0].value).toBe('5');
+      });
+
+      it('should flatten filters from multiple OR groups', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob')
+          .or()
+          .filterEquals('name', 'Alice')
+          .or()
+          .filterEquals('name', 'Charlie');
+
+        const filters = builder.getFilters();
+
+        expect(filters).toHaveLength(3);
+        expect(filters[0].value).toBe('Bob');
+        expect(filters[1].value).toBe('Alice');
+        expect(filters[2].value).toBe('Charlie');
+      });
+    });
+
+    describe('getFilterGroups', () => {
+      it('should return empty groups when no filters', () => {
+        const builder = SieveQueryBuilder.create<Author>();
+        const groups = builder.getFilterGroups();
+
+        expect(groups).toHaveLength(1);
+        expect(groups[0]).toEqual([]);
+      });
+
+      it('should return single group with filters', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob')
+          .filterGreaterThan('createdat', new Date('2024-01-01'));
+
+        const groups = builder.getFilterGroups();
+
+        expect(groups).toHaveLength(1);
+        expect(groups[0]).toHaveLength(2);
+        expect(groups[0][0].propertyName).toBe('name');
+        expect(groups[0][1].propertyName).toBe('createdat');
+      });
+
+      it('should separate OR groups correctly', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob')
+          .filterGreaterThan('createdat', new Date('2024-01-01'))
+          .or()
+          .filterEquals('name', 'Alice')
+          .filterLessThan('createdat', new Date('2024-06-01'));
+
+        const groups = builder.getFilterGroups();
+
+        expect(groups).toHaveLength(2);
+        expect(groups[0]).toHaveLength(2);
+        expect(groups[0][0].value).toBe('Bob');
+        expect(groups[0][1].operator).toBe('>');
+        expect(groups[1]).toHaveLength(2);
+        expect(groups[1][0].value).toBe('Alice');
+        expect(groups[1][1].operator).toBe('<');
+      });
+
+      it('should handle multiple OR groups', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob')
+          .or()
+          .filterEquals('name', 'Alice')
+          .or()
+          .filterEquals('name', 'Charlie');
+
+        const groups = builder.getFilterGroups();
+
+        expect(groups).toHaveLength(3);
+        expect(groups[0][0].value).toBe('Bob');
+        expect(groups[1][0].value).toBe('Alice');
+        expect(groups[2][0].value).toBe('Charlie');
+      });
+    });
+
+    describe('getSorts', () => {
+      it('should return empty array when no sorts', () => {
+        const builder = SieveQueryBuilder.create<Author>();
+        const sorts = builder.getSorts();
+
+        expect(sorts).toEqual([]);
+      });
+
+      it('should parse ascending sort', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortBy('name');
+
+        const sorts = builder.getSorts();
+
+        expect(sorts).toHaveLength(1);
+        expect(sorts[0].propertyName).toBe('name');
+        expect(sorts[0].isDescending).toBe(false);
+        expect(sorts[0].originalSort).toBe('name');
+      });
+
+      it('should parse descending sort', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortByDescending('createdat');
+
+        const sorts = builder.getSorts();
+
+        expect(sorts).toHaveLength(1);
+        expect(sorts[0].propertyName).toBe('createdat');
+        expect(sorts[0].isDescending).toBe(true);
+        expect(sorts[0].originalSort).toBe('-createdat');
+      });
+
+      it('should parse multiple sorts', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortByDescending('createdat')
+          .sortBy('name')
+          .sortByName('BooksCount', true);
+
+        const sorts = builder.getSorts();
+
+        expect(sorts).toHaveLength(3);
+        expect(sorts[0].propertyName).toBe('createdat');
+        expect(sorts[0].isDescending).toBe(true);
+        expect(sorts[1].propertyName).toBe('name');
+        expect(sorts[1].isDescending).toBe(false);
+        expect(sorts[2].propertyName).toBe('BooksCount');
+        expect(sorts[2].isDescending).toBe(true);
+      });
+    });
+
+    describe('getPage and getPageSize', () => {
+      it('should return undefined when not set', () => {
+        const builder = SieveQueryBuilder.create<Author>();
+
+        expect(builder.getPage()).toBeUndefined();
+        expect(builder.getPageSize()).toBeUndefined();
+      });
+
+      it('should return page when set', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .page(5);
+
+        expect(builder.getPage()).toBe(5);
+      });
+
+      it('should return pageSize when set', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .pageSize(25);
+
+        expect(builder.getPageSize()).toBe(25);
+      });
+
+      it('should return both when set', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .page(3)
+          .pageSize(50);
+
+        expect(builder.getPage()).toBe(3);
+        expect(builder.getPageSize()).toBe(50);
+      });
+    });
+
+    describe('hasFilter', () => {
+      it('should return false when no filters', () => {
+        const builder = SieveQueryBuilder.create<Author>();
+
+        expect(builder.hasFilter('name')).toBe(false);
+      });
+
+      it('should return true when filter exists', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob');
+
+        expect(builder.hasFilter('name')).toBe(true);
+      });
+
+      it('should return false when filter does not exist', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob');
+
+        expect(builder.hasFilter('id')).toBe(false);
+      });
+
+      it('should find filters across multiple groups', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterEquals('name', 'Bob')
+          .or()
+          .filterEquals('id', '123');
+
+        expect(builder.hasFilter('name')).toBe(true);
+        expect(builder.hasFilter('id')).toBe(true);
+      });
+
+      it('should detect custom property filters', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterByName('BooksCount', '>=', 5);
+
+        expect(builder.hasFilter('BooksCount')).toBe(true);
+      });
+
+      it('should work with all filter operators', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .filterContains('name', 'Bob')
+          .filterGreaterThan('createdat', new Date('2024-01-01'));
+
+        expect(builder.hasFilter('name')).toBe(true);
+        expect(builder.hasFilter('createdat')).toBe(true);
+      });
+    });
+
+    describe('hasSort', () => {
+      it('should return false when no sorts', () => {
+        const builder = SieveQueryBuilder.create<Author>();
+
+        expect(builder.hasSort('name')).toBe(false);
+      });
+
+      it('should return true for ascending sort', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortBy('name');
+
+        expect(builder.hasSort('name')).toBe(true);
+      });
+
+      it('should return true for descending sort', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortByDescending('createdat');
+
+        expect(builder.hasSort('createdat')).toBe(true);
+      });
+
+      it('should return false when sort does not exist', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortBy('name');
+
+        expect(builder.hasSort('createdat')).toBe(false);
+      });
+
+      it('should detect custom property sorts', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortByName('BooksCount', true);
+
+        expect(builder.hasSort('BooksCount')).toBe(true);
+      });
+
+      it('should work with multiple sorts', () => {
+        const builder = SieveQueryBuilder.create<Author>()
+          .sortByDescending('createdat')
+          .sortBy('name')
+          .sortByName('BooksCount');
+
+        expect(builder.hasSort('createdat')).toBe(true);
+        expect(builder.hasSort('name')).toBe(true);
+        expect(builder.hasSort('BooksCount')).toBe(true);
+        expect(builder.hasSort('id')).toBe(false);
+      });
+    });
+
+    describe('Integration - parsing and introspection', () => {
+      it('should introspect parsed query string', () => {
+        const queryString = 'filters=name@=Bob,createdat>=2024-01-01T00:00:00.000Z&sorts=-createdat,name&page=2&pageSize=20';
+        const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
+
+        // Check filters
+        const filters = builder.getFilters();
+        expect(filters).toHaveLength(2);
+        expect(filters[0].propertyName).toBe('name');
+        expect(filters[0].operator).toBe('@=');
+        expect(filters[1].propertyName).toBe('createdat');
+        expect(filters[1].operator).toBe('>=');
+
+        // Check sorts
+        const sorts = builder.getSorts();
+        expect(sorts).toHaveLength(2);
+        expect(sorts[0].propertyName).toBe('createdat');
+        expect(sorts[0].isDescending).toBe(true);
+        expect(sorts[1].propertyName).toBe('name');
+        expect(sorts[1].isDescending).toBe(false);
+
+        // Check pagination
+        expect(builder.getPage()).toBe(2);
+        expect(builder.getPageSize()).toBe(20);
+
+        // Check has methods
+        expect(builder.hasFilter('name')).toBe(true);
+        expect(builder.hasFilter('createdat')).toBe(true);
+        expect(builder.hasSort('createdat')).toBe(true);
+        expect(builder.hasSort('name')).toBe(true);
+      });
+
+      it('should introspect parsed SieveModel', () => {
+        const model = {
+          filters: 'name@=Bob,id!=123',
+          sorts: '-createdat,name',
+          page: 1,
+          pageSize: 10
+        };
+        const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
+
+        // Check filter groups
+        const groups = builder.getFilterGroups();
+        expect(groups).toHaveLength(1);
+        expect(groups[0]).toHaveLength(2);
+
+        // Check has methods
+        expect(builder.hasFilter('name')).toBe(true);
+        expect(builder.hasFilter('id')).toBe(true);
+        expect(builder.hasSort('createdat')).toBe(true);
+        expect(builder.hasSort('name')).toBe(true);
+      });
+
+      it('should introspect OR groups', () => {
+        const model = {
+          filters: 'name==Bob || name==Alice || name==Charlie',
+          sorts: '',
+          page: 1,
+          pageSize: 10
+        };
+        const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
+
+        const groups = builder.getFilterGroups();
+        // When parsed, "name==Bob || name==Alice || name==Charlie" creates 3 OR groups
+        expect(groups.length).toBeGreaterThanOrEqual(1);
+
+        // Check that all three values are present across groups
+        const allFilters = builder.getFilters();
+        expect(allFilters).toHaveLength(3);
+        expect(allFilters[0].value).toBe('Bob');
+        expect(allFilters[1].value).toBe('Alice');
+        expect(allFilters[2].value).toBe('Charlie');
+
+        expect(builder.hasFilter('name')).toBe(true);
+      });
     });
   });
 });

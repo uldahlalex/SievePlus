@@ -72,12 +72,14 @@ namespace Sieve.Plus.Services
         private readonly ISievePlusCustomSortMethods _plusCustomSortMethods;
         private readonly ISievePlusCustomFilterMethods _plusCustomFilterMethods;
         private readonly SievePlusPropertyMapper _mapper = new SievePlusPropertyMapper();
+        private readonly SievePlusQueryModelRegistry _queryModelRegistry = new SievePlusQueryModelRegistry();
 
         public SievePlusProcessor(IOptions<SievePlusOptions> options,
             ISievePlusCustomSortMethods plusCustomSortMethods,
             ISievePlusCustomFilterMethods plusCustomFilterMethods)
         {
             _mapper = MapProperties(_mapper);
+            ConfigureQueryModels(_queryModelRegistry);
             Options = options;
             _plusCustomSortMethods = plusCustomSortMethods;
             _plusCustomFilterMethods = plusCustomFilterMethods;
@@ -87,6 +89,7 @@ namespace Sieve.Plus.Services
             ISievePlusCustomSortMethods plusCustomSortMethods)
         {
             _mapper = MapProperties(_mapper);
+            ConfigureQueryModels(_queryModelRegistry);
             Options = options;
             _plusCustomSortMethods = plusCustomSortMethods;
         }
@@ -95,6 +98,7 @@ namespace Sieve.Plus.Services
             ISievePlusCustomFilterMethods plusCustomFilterMethods)
         {
             _mapper = MapProperties(_mapper);
+            ConfigureQueryModels(_queryModelRegistry);
             Options = options;
             _plusCustomFilterMethods = plusCustomFilterMethods;
         }
@@ -102,10 +106,31 @@ namespace Sieve.Plus.Services
         public SievePlusProcessor(IOptions<SievePlusOptions> options)
         {
             _mapper = MapProperties(_mapper);
+            ConfigureQueryModels(_queryModelRegistry);
             Options = options;
         }
 
         protected IOptions<SievePlusOptions> Options { get; }
+
+        /// <summary>
+        /// Override this method to configure query model mappings.
+        /// This is where you register your ISievePlusQueryConfiguration implementations.
+        /// </summary>
+        /// <param name="registry">The registry to add configurations to</param>
+        /// <example>
+        /// <code>
+        /// protected override void ConfigureQueryModels(SievePlusQueryModelRegistry registry)
+        /// {
+        ///     registry.AddConfiguration&lt;BookQueryConfiguration&gt;();
+        ///     registry.AddConfiguration&lt;AuthorQueryConfiguration&gt;();
+        ///     // Or: registry.AddConfigurationsFromAssembly(typeof(BookQueryConfiguration).Assembly);
+        /// }
+        /// </code>
+        /// </example>
+        protected virtual void ConfigureQueryModels(SievePlusQueryModelRegistry registry)
+        {
+            // Override in derived classes to add query model configurations
+        }
 
         /// <summary>
         /// Apply filtering, sorting, and pagination parameters found in `model` to `source`
@@ -139,6 +164,80 @@ namespace Sieve.Plus.Services
                 if (applySorting)
                 {
                     result = ApplySorting(model, result, dataForCustomMethods);
+                }
+
+                if (applyPagination)
+                {
+                    result = ApplyPagination(model, result);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (!Options.Value.ThrowExceptions)
+                {
+                    return result;
+                }
+
+                if (ex is SievePlusException)
+                {
+                    throw;
+                }
+
+                throw new SievePlusException(ex.Message, ex);
+            }
+        }
+
+        /// <summary>
+        /// Apply filtering, sorting, and pagination using an explicit query model.
+        /// The query model defines exactly what properties can be filtered/sorted.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type</typeparam>
+        /// <typeparam name="TQueryModel">The query model that defines filterable/sortable properties</typeparam>
+        /// <param name="model">An instance of ISievePlusModel</param>
+        /// <param name="source">Data source</param>
+        /// <param name="dataForCustomMethods">Additional data that will be passed down to custom methods</param>
+        /// <param name="applyFiltering">Should the data be filtered? Defaults to true.</param>
+        /// <param name="applySorting">Should the data be sorted? Defaults to true.</param>
+        /// <param name="applyPagination">Should the data be paginated? Defaults to true.</param>
+        /// <returns>Returns a transformed version of `source`</returns>
+        /// <example>
+        /// <code>
+        /// var sieveModel = new SievePlusModel { Filters = "Title@=*Harry,Pages>200" };
+        /// var books = processor.Apply&lt;Book, BookQueryModel&gt;(sieveModel, dbContext.Books);
+        /// </code>
+        /// </example>
+        public IQueryable<TEntity> Apply<TEntity, TQueryModel>(TSieveModel model, IQueryable<TEntity> source,
+            object[] dataForCustomMethods = null, bool applyFiltering = true, bool applySorting = true,
+            bool applyPagination = true)
+            where TQueryModel : ISievePlusQueryModel
+        {
+            var result = source;
+
+            if (model == null)
+            {
+                return result;
+            }
+
+            var mapper = _queryModelRegistry.GetMapper<TQueryModel, TEntity>();
+            if (mapper == null)
+            {
+                throw new SievePlusException(
+                    $"No query model configuration found for {typeof(TQueryModel).Name} -> {typeof(TEntity).Name}. " +
+                    $"Make sure to register it in ConfigureQueryModels().");
+            }
+
+            try
+            {
+                if (applyFiltering)
+                {
+                    result = ApplyFilteringWithQueryModel<TEntity, TQueryModel>(model, result, mapper, dataForCustomMethods);
+                }
+
+                if (applySorting)
+                {
+                    result = ApplySortingWithQueryModel<TEntity, TQueryModel>(model, result, mapper, dataForCustomMethods);
                 }
 
                 if (applyPagination)
@@ -534,6 +633,234 @@ namespace Sieve.Plus.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Apply filtering using an explicit query model configuration.
+        /// </summary>
+        protected virtual IQueryable<TEntity> ApplyFilteringWithQueryModel<TEntity, TQueryModel>(
+            TSieveModel model,
+            IQueryable<TEntity> result,
+            SievePlusQueryMapper<TQueryModel, TEntity> mapper,
+            object[] dataForCustomMethods = null)
+            where TQueryModel : ISievePlusQueryModel
+        {
+            var filterGroups = model?.GetFiltersWithOrParsed();
+            if (filterGroups == null)
+            {
+                return result;
+            }
+
+            Expression outerExpression = null;
+            var parameter = Expression.Parameter(typeof(TEntity), "e");
+
+            // Process each OR group
+            foreach (var filterGroup in filterGroups)
+            {
+                Expression groupExpression = null;
+
+                // Within each group, combine filters with AND logic
+                foreach (var filterTerm in filterGroup)
+                {
+                    Expression innerExpression = null;
+                    foreach (var filterTermName in filterTerm.Names)
+                    {
+                        // Look up the property in the query model mapper
+                        if (!mapper.Mappings.TryGetValue(filterTermName, out var mapping))
+                        {
+                            throw new SievePlusException(
+                                $"Property '{filterTermName}' is not configured in query model {typeof(TQueryModel).Name}");
+                        }
+
+                        if (!mapping.CanFilter)
+                        {
+                            throw new SievePlusException(
+                                $"Property '{filterTermName}' in query model {typeof(TQueryModel).Name} is not configured for filtering");
+                        }
+
+                        // Handle custom filters
+                        if (mapping.IsCustomFilter)
+                        {
+                            if (filterTerm.Values == null || filterTerm.Values.Length == 0)
+                            {
+                                continue;
+                            }
+
+                            var customExpression = mapping.EntityExpression as Expression<Func<TEntity, bool>>;
+                            if (customExpression != null)
+                            {
+                                // For custom filters, we evaluate the boolean value from the filter
+                                var filterValue = filterTerm.Values[0];
+                                if (bool.TryParse(filterValue, out var boolValue))
+                                {
+                                    if (boolValue)
+                                    {
+                                        // Replace parameter in custom expression
+                                        var visitor = new ParameterReplacementVisitor(customExpression.Parameters[0], parameter);
+                                        var replacedBody = visitor.Visit(customExpression.Body);
+                                        innerExpression = innerExpression == null
+                                            ? replacedBody
+                                            : Expression.OrElse(innerExpression, replacedBody);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Regular property mapping
+                            var property = mapping.EntityPropertyInfo;
+                            if (property == null)
+                            {
+                                continue;
+                            }
+
+                            if (filterTerm.Values == null)
+                            {
+                                continue;
+                            }
+
+                            var converter = TypeDescriptor.GetConverter(property.PropertyType);
+                            foreach (var filterTermValue in filterTerm.Values)
+                            {
+                                var (propertyValue, nullCheck) =
+                                    GetPropertyValueAndNullCheckExpression(parameter, mapping.EntityFullPropertyName);
+
+                                var isFilterTermValueNull =
+                                    IsFilterTermValueNull(propertyValue, filterTerm, filterTermValue);
+
+                                var filterValue = isFilterTermValueNull
+                                    ? Expression.Constant(null, property.PropertyType)
+                                    : ConvertStringValueToConstantExpression(filterTermValue, property, converter);
+
+                                if (filterTerm.OperatorIsCaseInsensitive && !isFilterTermValueNull)
+                                {
+                                    propertyValue = Expression.Call(propertyValue,
+                                        typeof(string).GetMethods()
+                                            .First(m => m.Name == "ToUpper" && m.GetParameters().Length == 0));
+
+                                    filterValue = Expression.Call(filterValue,
+                                        typeof(string).GetMethods()
+                                            .First(m => m.Name == "ToUpper" && m.GetParameters().Length == 0));
+                                }
+
+                                var expression = GetExpression(filterTerm, filterValue, propertyValue);
+
+                                if (filterTerm.OperatorIsNegated)
+                                {
+                                    expression = Expression.Not(expression);
+                                }
+
+                                if (expression.NodeType != ExpressionType.NotEqual || Options.Value.IgnoreNullsOnNotEqual)
+                                {
+                                    var filterValueNullCheck = GetFilterValueNullCheck(parameter, mapping.EntityFullPropertyName, isFilterTermValueNull);
+                                    if (filterValueNullCheck != null)
+                                    {
+                                        expression = Expression.AndAlso(filterValueNullCheck, expression);
+                                    }
+                                }
+
+                                innerExpression = innerExpression == null
+                                    ? expression
+                                    : Expression.OrElse(innerExpression, expression);
+                            }
+                        }
+                    }
+
+                    // Combine filter terms within this group with AND
+                    if (groupExpression == null)
+                    {
+                        groupExpression = innerExpression;
+                    }
+                    else if (innerExpression != null)
+                    {
+                        groupExpression = Expression.AndAlso(groupExpression, innerExpression);
+                    }
+                }
+
+                // Combine groups with OR logic
+                if (outerExpression == null)
+                {
+                    outerExpression = groupExpression;
+                }
+                else if (groupExpression != null)
+                {
+                    outerExpression = Expression.OrElse(outerExpression, groupExpression);
+                }
+            }
+
+            return outerExpression == null
+                ? result
+                : result.Where(Expression.Lambda<Func<TEntity, bool>>(outerExpression, parameter));
+        }
+
+        /// <summary>
+        /// Apply sorting using an explicit query model configuration.
+        /// </summary>
+        protected virtual IQueryable<TEntity> ApplySortingWithQueryModel<TEntity, TQueryModel>(
+            TSieveModel model,
+            IQueryable<TEntity> result,
+            SievePlusQueryMapper<TQueryModel, TEntity> mapper,
+            object[] dataForCustomMethods = null)
+            where TQueryModel : ISievePlusQueryModel
+        {
+            if (model?.GetSortsParsed() == null)
+            {
+                return result;
+            }
+
+            var useThenBy = false;
+            foreach (var sortTerm in model.GetSortsParsed())
+            {
+                // Look up the property in the query model mapper
+                if (!mapper.Mappings.TryGetValue(sortTerm.Name, out var mapping))
+                {
+                    throw new SievePlusException(
+                        $"Property '{sortTerm.Name}' is not configured in query model {typeof(TQueryModel).Name}");
+                }
+
+                if (!mapping.CanSort)
+                {
+                    throw new SievePlusException(
+                        $"Property '{sortTerm.Name}' in query model {typeof(TQueryModel).Name} is not configured for sorting");
+                }
+
+                if (mapping.IsCustomFilter)
+                {
+                    throw new SievePlusException(
+                        $"Property '{sortTerm.Name}' is a custom filter and cannot be used for sorting");
+                }
+
+                var property = mapping.EntityPropertyInfo;
+                if (property != null)
+                {
+                    result = result.OrderByDynamic(mapping.EntityFullPropertyName, property, sortTerm.Descending, useThenBy, Options.Value.DisableNullableTypeExpressionForSorting);
+                }
+
+                useThenBy = true;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Helper class to replace parameters in expressions.
+        /// Used for custom filter expressions.
+        /// </summary>
+        private class ParameterReplacementVisitor : ExpressionVisitor
+        {
+            private readonly ParameterExpression _oldParameter;
+            private readonly ParameterExpression _newParameter;
+
+            public ParameterReplacementVisitor(ParameterExpression oldParameter, ParameterExpression newParameter)
+            {
+                _oldParameter = oldParameter;
+                _newParameter = newParameter;
+            }
+
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                return node == _oldParameter ? _newParameter : base.VisitParameter(node);
+            }
         }
     }
 }

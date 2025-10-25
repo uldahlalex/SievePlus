@@ -1,3 +1,8 @@
-- publish nugets med respective versions
-- source generator from processor
 - adjust readme
+- push to git
+
+practical pricerunner app with:
+query model <TQ, TR> for server side setup
+new powerful OR querying
+
+- publish nugets med respective versions

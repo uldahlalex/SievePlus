@@ -9,21 +9,10 @@
     <!-- Package Metadata -->
     <PackageId>Sieve.Plus</PackageId>
     <Version>2.6.0</Version>
-    <Title>Sieve.Plus - Enhanced Sorting, Filtering and Pagination</Title>
+    <Title>Sieve.Plus - Enhanced Querying And Usability</Title>
     <Description>
       Sieve.Plus - An enhanced fork of Sieve with OR query support and type-safe query building capabilities.
 
-      A simple, clean, and extensible framework for .NET that adds sorting, filtering, and pagination functionality out of the box.
-
-      New features in Sieve.Plus:
-      - OR query support with || operator (e.g., filters=Title@=awesome || LikeCount>100)
-      - Complex grouped queries combining AND and OR logic
-      - Type-safe query builder (available as separate Sieve.QueryBuilder package)
-      - Full backward compatibility with original Sieve syntax
-
-      Most common use case is for serving ASP.NET Core GET queries with advanced filtering needs.
-
-      Based on the original Sieve project by Biarity: https://github.com/Biarity/Sieve
     </Description>
 
     <!-- Authors - Respecting original authors and fork maintainer -->
@@ -36,16 +25,6 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>
-      Version 2.6.0:
-      - Added OR query support using || operator
-      - Enhanced filtering capabilities for complex business logic
-      - Type-safe query builder available as Sieve.QueryBuilder package
-      - Maintains full backward compatibility with Sieve 2.5.x
-      - Multi-target framework support (netstandard2.0, netstandard2.1, net6.0, net8.0, net9.0)
-
-      This is an enhanced fork of the original Sieve project.
-    </PackageReleaseNotes>
 
     <!-- Repository Information -->
     <RepositoryUrl>https://github.com/uldahlalex/sieveplus</RepositoryUrl>

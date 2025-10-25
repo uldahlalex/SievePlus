@@ -23,16 +23,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>
-      Version 2.6.0:
-      - Full support for OR queries using || operator
-      - Multi-target framework support (netstandard2.0 → net9.0)
-      - Compatible with Sieve.Plus 2.6.0 OR queries
-      - Round-trip parsing with OR group support
-      - Inspection API for examining filter groups
 
-      This is a companion package to Sieve.Plus.
-    </PackageReleaseNotes>
 
     <!-- Repository Information -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

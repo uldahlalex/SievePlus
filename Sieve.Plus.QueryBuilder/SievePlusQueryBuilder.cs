@@ -18,6 +18,10 @@ public class SievePlusQueryBuilder<T> where T : class
     private int? _page;
     private int? _pageSize;
 
+    // New fields for parentheses support
+    private readonly Stack<FilterSegment> _segmentStack = new();
+    private FilterSegment _currentSegment = new FilterSegment();
+
     /// <summary>
     /// Start a new OR group. Subsequent filters will be OR'd with previous filter groups.
     /// </summary>
@@ -29,6 +33,10 @@ public class SievePlusQueryBuilder<T> where T : class
     /// </example>
     public SievePlusQueryBuilder<T> Or()
     {
+        // Mark current segment as OR group
+        _currentSegment.IsOrGroup = true;
+
+        // Also maintain backward compatibility with old group system
         _filterGroups.Add(new List<string>());
         _currentGroupIndex++;
         return this;
@@ -41,8 +49,17 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}=={formattedValue}");
+        AddFilter($"{propertyName}=={formattedValue}");
         return this;
+    }
+
+    /// <summary>
+    /// Helper method to add a filter to both systems (new segment + old groups)
+    /// </summary>
+    private void AddFilter(string filter)
+    {
+        _currentSegment.Parts.Add(filter);
+        _filterGroups[_currentGroupIndex].Add(filter);
     }
 
     /// <summary>
@@ -52,7 +69,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}!={formattedValue}");
+        AddFilter($"{propertyName}!={formattedValue}");
         return this;
     }
 
@@ -63,7 +80,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}@={formattedValue}");
+        AddFilter($"{propertyName}@={formattedValue}");
         return this;
     }
 
@@ -74,7 +91,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}_={formattedValue}");
+        AddFilter($"{propertyName}_={formattedValue}");
         return this;
     }
 
@@ -85,7 +102,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}>{formattedValue}");
+        AddFilter($"{propertyName}>{formattedValue}");
         return this;
     }
 
@@ -96,7 +113,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}<{formattedValue}");
+        AddFilter($"{propertyName}<{formattedValue}");
         return this;
     }
 
@@ -107,7 +124,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}>={formattedValue}");
+        AddFilter($"{propertyName}>={formattedValue}");
         return this;
     }
 
@@ -118,7 +135,7 @@ public class SievePlusQueryBuilder<T> where T : class
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}<={formattedValue}");
+        AddFilter($"{propertyName}<={formattedValue}");
         return this;
     }
 
@@ -128,7 +145,7 @@ public class SievePlusQueryBuilder<T> where T : class
     public SievePlusQueryBuilder<T> FilterByName(string propertyName, string operatorSymbol, object value)
     {
         var formattedValue = FormatValue(value);
-        _filterGroups[_currentGroupIndex].Add($"{propertyName}{operatorSymbol}{formattedValue}");
+        AddFilter($"{propertyName}{operatorSymbol}{formattedValue}");
         return this;
     }
 
@@ -184,6 +201,19 @@ public class SievePlusQueryBuilder<T> where T : class
     /// </summary>
     public string BuildFiltersString()
     {
+        // Check if we used the new segment system (BeginGroup/EndGroup)
+        if (_segmentStack.Count > 0)
+        {
+            throw new InvalidOperationException("Unmatched BeginGroup() call - missing EndGroup()");
+        }
+
+        // If current segment has parts, use the new segment system
+        if (_currentSegment.Parts.Count > 0)
+        {
+            return _currentSegment.ToQueryString();
+        }
+
+        // Fall back to old group system for backward compatibility
         var nonEmptyGroups = _filterGroups.Where(g => g.Any()).ToList();
         if (!nonEmptyGroups.Any())
             return string.Empty;
@@ -533,7 +563,153 @@ public class SievePlusQueryBuilder<T> where T : class
     }
 
     /// <summary>
+    /// Begin a grouped sub-expression with parentheses
+    /// Filters added after BeginGroup will be wrapped in parentheses
+    /// Must be paired with EndGroup()
+    /// </summary>
+    /// <example>
+    /// builder.BeginGroup()
+    ///        .FilterEquals(c => c.Processor, "Intel")
+    ///        .Or()
+    ///        .FilterEquals(c => c.Processor, "AMD")
+    ///        .EndGroup()
+    ///        .FilterGreaterThan(c => c.Price, 1000)
+    /// // Produces: (Processor==Intel || Processor==AMD),Price&gt;1000
+    /// </example>
+    public SievePlusQueryBuilder<T> BeginGroup()
+    {
+        // Push current segment onto stack
+        _segmentStack.Push(_currentSegment);
+
+        // Create new segment that will be wrapped in parentheses
+        _currentSegment = new FilterSegment { WrapInParentheses = true };
+
+        return this;
+    }
+
+    /// <summary>
+    /// End a grouped sub-expression
+    /// Must be paired with BeginGroup()
+    /// </summary>
+    public SievePlusQueryBuilder<T> EndGroup()
+    {
+        if (_segmentStack.Count == 0)
+        {
+            throw new InvalidOperationException("EndGroup() called without matching BeginGroup()");
+        }
+
+        // Pop the parent segment and add current segment to it
+        var completedSegment = _currentSegment;
+        _currentSegment = _segmentStack.Pop();
+        _currentSegment.Parts.Add(completedSegment);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Add shared constraints that will be applied to all OR groups
+    /// This is a convenience method to avoid repeating filters
+    /// </summary>
+    /// <example>
+    /// // Instead of repeating constraints:
+    /// builder.FilterEquals(c => c.Processor, "Intel")
+    ///        .FilterGreaterThan(c => c.Price, 1000)
+    ///        .FilterLessThan(c => c.Price, 2000)
+    ///        .Or()
+    ///        .FilterEquals(c => c.Processor, "AMD")
+    ///        .FilterGreaterThan(c => c.Price, 1000)
+    ///        .FilterLessThan(c => c.Price, 2000)
+    ///
+    /// // Use WithSharedConstraints:
+    /// builder.BeginGroup()
+    ///        .FilterEquals(c => c.Processor, "Intel")
+    ///        .Or()
+    ///        .FilterEquals(c => c.Processor, "AMD")
+    ///        .EndGroup()
+    ///        .WithSharedConstraints(b => b
+    ///            .FilterGreaterThan(c => c.Price, 1000)
+    ///            .FilterLessThan(c => c.Price, 2000))
+    /// // Produces: (Processor==Intel || Processor==AMD),Price&gt;1000,Price&lt;2000
+    /// </example>
+    public SievePlusQueryBuilder<T> WithSharedConstraints(Action<SievePlusQueryBuilder<T>> constraintsBuilder)
+    {
+        constraintsBuilder(this);
+        return this;
+    }
+
+    /// <summary>
+    /// Create a filter group with alternative values for a single property
+    /// This is a helper for the common case of OR-ing values on one property
+    /// </summary>
+    /// <example>
+    /// builder.FilterWithAlternatives(
+    ///     c => c.Processor,
+    ///     new[] { "Intel i9", "AMD Ryzen 9" },
+    ///     b => b.FilterGreaterThan(c => c.Price, 1000))
+    /// // Produces: (Processor==Intel i9 || Processor==AMD Ryzen 9),Price&gt;1000
+    /// </example>
+    public SievePlusQueryBuilder<T> FilterWithAlternatives<TProp>(
+        Expression<Func<T, TProp>> property,
+        TProp[] alternatives,
+        Action<SievePlusQueryBuilder<T>>? sharedConstraints = null)
+    {
+        if (alternatives == null || alternatives.Length == 0)
+        {
+            return this;
+        }
+
+        BeginGroup();
+
+        for (int i = 0; i < alternatives.Length; i++)
+        {
+            if (i > 0)
+            {
+                Or();
+            }
+            FilterEquals(property, alternatives[i]);
+        }
+
+        EndGroup();
+
+        // Apply shared constraints after the group
+        if (sharedConstraints != null)
+        {
+            sharedConstraints(this);
+        }
+
+        return this;
+    }
+
+    /// <summary>
     /// Create a new builder instance for fluent API
     /// </summary>
     public static SievePlusQueryBuilder<T> Create() => new();
+}
+
+/// <summary>
+/// Represents a segment in the filter expression tree
+/// Can be a simple filter, an AND group, or an OR group
+/// </summary>
+internal class FilterSegment
+{
+    public List<object> Parts { get; set; } = new(); // Can contain strings or FilterSegment
+    public bool IsOrGroup { get; set; } = false;
+    public bool WrapInParentheses { get; set; } = false;
+
+    public string ToQueryString()
+    {
+        if (Parts.Count == 0)
+            return string.Empty;
+
+        var separator = IsOrGroup ? " || " : ",";
+        var parts = Parts.Select(p => p is FilterSegment segment ? segment.ToQueryString() : p.ToString()).ToArray();
+        var result = string.Join(separator, parts.Where(p => !string.IsNullOrEmpty(p)));
+
+        if (WrapInParentheses && Parts.Count > 1)
+        {
+            return $"({result})";
+        }
+
+        return result;
+    }
 }

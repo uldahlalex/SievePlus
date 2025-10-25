@@ -1,4 +1,5 @@
 using System.Linq;
+using api.DTOs.QueryModels;
 using dataccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -8,12 +9,27 @@ using Sieve.Plus.Services;
 namespace api.Services;
 
 /// <summary>
-/// Custom Sieve.Plus processor with fluent API configuration for entities
+/// Custom Sieve.Plus processor with both traditional fluent API configuration
+/// and new explicit query model configurations
 /// </summary>
 public class ApplicationSievePlusProcessor : SievePlusProcessor
 {
     public ApplicationSievePlusProcessor(IOptions<SievePlusOptions> options) : base(options)
     {
+    }
+
+    /// <summary>
+    /// Configure explicit query models for type-safe querying.
+    /// Query models define exactly what properties can be filtered/sorted.
+    /// </summary>
+    protected override void ConfigureQueryModels(SievePlusQueryModelRegistry registry)
+    {
+        // Register query model configurations
+        registry.AddConfiguration<BookQueryConfiguration>();
+        registry.AddConfiguration<AuthorQueryConfiguration>();
+
+        // Alternative: Scan entire assembly for all configurations
+        // registry.AddConfigurationsFromAssembly(typeof(BookQueryConfiguration).Assembly);
     }
 
     protected override SievePlusPropertyMapper MapProperties(SievePlusPropertyMapper mapper)
