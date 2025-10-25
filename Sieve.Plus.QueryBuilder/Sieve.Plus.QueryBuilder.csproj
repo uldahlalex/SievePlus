@@ -1,0 +1,67 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Multi-targeting for maximum compatibility -->
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <!-- Package Metadata -->
+    <PackageId>Sieve.Plus.QueryBuilder</PackageId>
+    <Version>2.6.0</Version>
+    <Title>Sieve.Plus Query Builder</Title>
+    <Description>Type-safe query builder for Sieve.Plus with OR query support and round-trip parsing. Build, parse, and inspect Sieve filters, sorts, and pagination with compile-time safety. Provides type-safe query building using lambda expressions, query models for IntelliSense on custom mapped properties, round-trip parsing of query strings and SieveModels, inspection API to examine filters and sorts programmatically, full support for OR queries using double-pipe operator, all Sieve operators (equals, not equals, contains, starts with, ends with, greater than, less than, greater or equal, less or equal), and fluent API for readable query construction. Works with Sieve.Plus 2.6.0 or higher.</Description>
+
+    <!-- Authors -->
+    <Authors>Alex Uldahl;Fork Maintainer</Authors>
+    <Company>Community Fork</Company>
+
+    <!-- Package Information -->
+    <PackageTags>sieve;query-builder;filtering;sorting;pagination;type-safe;aspnetcore;linq;or-queries</PackageTags>
+    <PackageProjectUrl>https://github.com/uldahlalex/SievePlus</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/uldahlalex/SievePlus</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>
+      Version 2.6.0:
+      - Full support for OR queries using || operator
+      - Multi-target framework support (netstandard2.0 → net9.0)
+      - Compatible with Sieve.Plus 2.6.0 OR queries
+      - Round-trip parsing with OR group support
+      - Inspection API for examining filter groups
+
+      This is a companion package to Sieve.Plus.
+    </PackageReleaseNotes>
+
+    <!-- Repository Information -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Deterministic Builds -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+
+    <!-- Documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Include README in package -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Reference to Sieve.Plus -->
+  <ItemGroup>
+    <ProjectReference Include="..\Sieve.Plus\Sieve.Plus.csproj" />
+  </ItemGroup>
+
+  <!-- Source Link for debugging -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

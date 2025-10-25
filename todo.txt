@@ -1,0 +1,3 @@
+- publish nugets med respective versions
+- source generator from processor
+- adjust readme

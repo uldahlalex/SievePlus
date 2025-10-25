@@ -1,0 +1,51 @@
+name: Publish Sieve.Plus to NuGet
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./Sieve.Plus/Sieve.csproj
+
+      - name: Build
+        run: dotnet build ./Sieve.Plus/Sieve.csproj --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ./SieveUnitTests/SieveUnitTests.csproj --configuration Release --verbosity normal
+
+      - name: Extract version from csproj
+        id: get_version
+        run: |
+          VERSION=$(grep -oP '<Version>\K[^<]+' ./Sieve.Plus/Sieve.csproj)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing Sieve.Plus version: $VERSION"
+
+      - name: Pack NuGet package
+        run: dotnet pack ./Sieve.Plus/Sieve.csproj --configuration Release --no-build --output ./nupkg
+
+      - name: Publish to NuGet
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "sieve-plus-v${{ steps.get_version.outputs.version }}" -m "Release Sieve.Plus v${{ steps.get_version.outputs.version }}"
+          git push origin "sieve-plus-v${{ steps.get_version.outputs.version }}"

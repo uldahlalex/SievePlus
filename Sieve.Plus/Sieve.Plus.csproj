@@ -1,0 +1,102 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Multi-targeting for maximum compatibility -->
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <!-- Package Metadata -->
+    <PackageId>Sieve.Plus</PackageId>
+    <Version>2.6.0</Version>
+    <Title>Sieve.Plus - Enhanced Sorting, Filtering and Pagination</Title>
+    <Description>
+      Sieve.Plus - An enhanced fork of Sieve with OR query support and type-safe query building capabilities.
+
+      A simple, clean, and extensible framework for .NET that adds sorting, filtering, and pagination functionality out of the box.
+
+      New features in Sieve.Plus:
+      - OR query support with || operator (e.g., filters=Title@=awesome || LikeCount>100)
+      - Complex grouped queries combining AND and OR logic
+      - Type-safe query builder (available as separate Sieve.QueryBuilder package)
+      - Full backward compatibility with original Sieve syntax
+
+      Most common use case is for serving ASP.NET Core GET queries with advanced filtering needs.
+
+      Based on the original Sieve project by Biarity: https://github.com/Biarity/Sieve
+    </Description>
+
+    <!-- Authors - Respecting original authors and fork maintainer -->
+    <Authors>Biarity;Ashish Patel;Kevin Sommer;Alex Uldahl</Authors>
+    <Company>uldahlalex</Company>
+
+    <!-- Package Information -->
+    <PackageTags>Filter;Sort;Page;Paging;Query;LINQ;OData;OR;TypeSafe;Plus</PackageTags>
+    <PackageProjectUrl>https://github.com/uldahlalex/sieveplus</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>
+      Version 2.6.0:
+      - Added OR query support using || operator
+      - Enhanced filtering capabilities for complex business logic
+      - Type-safe query builder available as Sieve.QueryBuilder package
+      - Maintains full backward compatibility with Sieve 2.5.x
+      - Multi-target framework support (netstandard2.0, netstandard2.1, net6.0, net8.0, net9.0)
+
+      This is an enhanced fork of the original Sieve project.
+    </PackageReleaseNotes>
+
+    <!-- Repository Information -->
+    <RepositoryUrl>https://github.com/uldahlalex/sieveplus</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- Source Link Support -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Deterministic Builds -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+
+    <!-- Documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Include README in package -->
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Dependencies - Using minimum versions for broad compatibility -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+  </ItemGroup>
+
+  <!-- Framework-specific dependencies -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- Source Link for debugging -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

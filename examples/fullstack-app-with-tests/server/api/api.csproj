@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <PackageReference Include="Bogus" Version="*" />
+        <PackageReference Include="NSwag.AspNetCore" Version="*" />
+        <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="*" />
+        <ProjectReference Include="..\dataccess\dataccess.csproj" />
+        <ProjectReference Include="..\..\..\..\Sieve.Plus\Sieve.Plus.csproj" />
+    </ItemGroup>
+
+</Project>

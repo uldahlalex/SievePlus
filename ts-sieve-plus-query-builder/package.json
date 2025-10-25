@@ -1,0 +1,33 @@
+{
+  "name": "@sieveplus/query-builder",
+  "version": "0.0.1",
+  "description": "Type-safe Sieve query string builder for TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "sieve",
+    "query",
+    "builder",
+    "typescript",
+    "filtering",
+    "sorting",
+    "pagination"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

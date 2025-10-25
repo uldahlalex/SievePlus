@@ -1,0 +1,17 @@
+Sieve.Plus
+Copyright 2025 Alex (uldahlalex)
+
+This project is a fork of and based upon Sieve:
+https://github.com/Biarity/Sieve
+
+Original Sieve Copyright 2018 Biarity, 2021 Ashish Patel and Kevin Sommer
+
+Changes from the original Sieve project include:
+- Added OR query support using || (double pipe) operator for flexible filtering
+- Created type-safe query builder functionality (Sieve.Plus.QueryBuilder package)
+- Extended multi-framework support to include net9.0
+- Enhanced filter parsing to support complex OR/AND combinations
+- Maintained full backward compatibility with original Sieve API
+
+This software is licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full license text.
