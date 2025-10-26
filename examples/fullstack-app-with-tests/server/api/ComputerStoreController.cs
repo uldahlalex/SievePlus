@@ -9,20 +9,20 @@ namespace api;
 [Route("api/[controller]")]
 public class ComputerStoreController(IComputerStoreService computerStoreService) : ControllerBase
 {
-    [HttpGet(nameof(GetComputers))]
-    public async Task<List<Computer>> GetComputers([FromQuery] SievePlusModel model)
+    [HttpPost(nameof(GetComputers))]
+    public async Task<List<Computer>> GetComputers([FromBody] SievePlusModel model)
     {
         return await computerStoreService.GetComputers(model);
     }
 
-    [HttpGet(nameof(GetBrands))]
-    public async Task<List<Brand>> GetBrands([FromQuery] SievePlusModel model)
+    [HttpPost(nameof(GetBrands))]
+    public async Task<List<Brand>> GetBrands([FromBody] SievePlusModel model)
     {
         return await computerStoreService.GetBrands(model);
     }
 
-    [HttpGet(nameof(GetCategories))]
-    public async Task<List<Category>> GetCategories([FromQuery] SievePlusModel model)
+    [HttpPost(nameof(GetCategories))]
+    public async Task<List<Category>> GetCategories([FromBody] SievePlusModel model)
     {
         return await computerStoreService.GetCategories(model);
     }

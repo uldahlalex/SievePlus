@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { SieveQueryBuilder } from '../../../../../ts-sieve-plus-query-builder/src/index';
-import { ApiClient, Computer, ComputerQueryModel } from '../generated-client';
+import {type Computer, type ComputerQueryModel, ComputerStoreClient} from "../generated-client.ts";
+import {resolveRefs} from "dotnet-json-refs";
 
-const client = new ApiClient('http://localhost:5000');
+const client = new ComputerStoreClient('http://localhost:5284');
 
 export default function Computers() {
   const [computers, setComputers] = useState<Computer[]>([]);
@@ -61,11 +62,9 @@ export default function Computers() {
         builder.sortBy(sortBy as any);
       }
 
-      const queryString = builder.buildQueryString();
-      console.log('Query:', queryString);
-
-      const result = await client.computerStore_GetComputers(queryString);
-      setComputers(result as Computer[]);
+      const model = builder.buildSieveModel();
+      const result = await client.getComputers(model);
+      setComputers(resolveRefs(result));
     } catch (error) {
       console.error('Error fetching computers:', error);
     } finally {
@@ -221,7 +220,7 @@ export default function Computers() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {computers.map((computer) => (
+            {computers && computers.length > 0 && computers.map((computer) => (
               <div key={computer.id} className="card bg-base-100 shadow-xl">
                 <div className="card-body">
                   <h2 className="card-title text-lg">{computer.name}</h2>

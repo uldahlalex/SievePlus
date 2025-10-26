@@ -17,8 +17,6 @@ public class ComputerStoreService(MyDbContext ctx, SievePlusProcessor sievePlusP
 
         // Then include related data - but DON'T nest further to avoid cycles
         return query
-            .Include(c => c.Brand)
-            .Include(c => c.Category)
             .AsSplitQuery()
             .ToListAsync();
     }

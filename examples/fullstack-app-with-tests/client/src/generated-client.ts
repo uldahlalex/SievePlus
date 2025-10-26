@@ -17,25 +17,17 @@ export class ComputerStoreClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getComputers(filters: string | undefined, sorts: string | undefined, page: number | null | undefined, pageSize: number | null | undefined): Promise<Computer[]> {
-        let url_ = this.baseUrl + "/api/ComputerStore/GetComputers?";
-        if (filters === null)
-            throw new globalThis.Error("The parameter 'filters' cannot be null.");
-        else if (filters !== undefined)
-            url_ += "Filters=" + encodeURIComponent("" + filters) + "&";
-        if (sorts === null)
-            throw new globalThis.Error("The parameter 'sorts' cannot be null.");
-        else if (sorts !== undefined)
-            url_ += "Sorts=" + encodeURIComponent("" + sorts) + "&";
-        if (page !== undefined && page !== null)
-            url_ += "Page=" + encodeURIComponent("" + page) + "&";
-        if (pageSize !== undefined && pageSize !== null)
-            url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
+    getComputers(model: SievePlusModel): Promise<Computer[]> {
+        let url_ = this.baseUrl + "/api/ComputerStore/GetComputers";
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(model);
+
         let options_: RequestInit = {
-            method: "GET",
+            body: content_,
+            method: "POST",
             headers: {
+                "Content-Type": "application/json",
                 "Accept": "application/json"
             }
         };
@@ -62,25 +54,17 @@ export class ComputerStoreClient {
         return Promise.resolve<Computer[]>(null as any);
     }
 
-    getBrands(filters: string | undefined, sorts: string | undefined, page: number | null | undefined, pageSize: number | null | undefined): Promise<Brand[]> {
-        let url_ = this.baseUrl + "/api/ComputerStore/GetBrands?";
-        if (filters === null)
-            throw new globalThis.Error("The parameter 'filters' cannot be null.");
-        else if (filters !== undefined)
-            url_ += "Filters=" + encodeURIComponent("" + filters) + "&";
-        if (sorts === null)
-            throw new globalThis.Error("The parameter 'sorts' cannot be null.");
-        else if (sorts !== undefined)
-            url_ += "Sorts=" + encodeURIComponent("" + sorts) + "&";
-        if (page !== undefined && page !== null)
-            url_ += "Page=" + encodeURIComponent("" + page) + "&";
-        if (pageSize !== undefined && pageSize !== null)
-            url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
+    getBrands(model: SievePlusModel): Promise<Brand[]> {
+        let url_ = this.baseUrl + "/api/ComputerStore/GetBrands";
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(model);
+
         let options_: RequestInit = {
-            method: "GET",
+            body: content_,
+            method: "POST",
             headers: {
+                "Content-Type": "application/json",
                 "Accept": "application/json"
             }
         };
@@ -107,25 +91,17 @@ export class ComputerStoreClient {
         return Promise.resolve<Brand[]>(null as any);
     }
 
-    getCategories(filters: string | undefined, sorts: string | undefined, page: number | null | undefined, pageSize: number | null | undefined): Promise<Category[]> {
-        let url_ = this.baseUrl + "/api/ComputerStore/GetCategories?";
-        if (filters === null)
-            throw new globalThis.Error("The parameter 'filters' cannot be null.");
-        else if (filters !== undefined)
-            url_ += "Filters=" + encodeURIComponent("" + filters) + "&";
-        if (sorts === null)
-            throw new globalThis.Error("The parameter 'sorts' cannot be null.");
-        else if (sorts !== undefined)
-            url_ += "Sorts=" + encodeURIComponent("" + sorts) + "&";
-        if (page !== undefined && page !== null)
-            url_ += "Page=" + encodeURIComponent("" + page) + "&";
-        if (pageSize !== undefined && pageSize !== null)
-            url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
+    getCategories(model: SievePlusModel): Promise<Category[]> {
+        let url_ = this.baseUrl + "/api/ComputerStore/GetCategories";
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(model);
+
         let options_: RequestInit = {
-            method: "GET",
+            body: content_,
+            method: "POST",
             headers: {
+                "Content-Type": "application/json",
                 "Accept": "application/json"
             }
         };
@@ -184,6 +160,16 @@ export interface Category {
     name: string;
     createdAt: string;
     computers: Computer[];
+}
+
+export interface SievePlusModelOfFilterTermAndSortTerm {
+    filters: string;
+    sorts: string;
+    page: number | undefined;
+    pageSize: number | undefined;
+}
+
+export interface SievePlusModel extends SievePlusModelOfFilterTermAndSortTerm {
 }
 
 export interface ComputerQueryModel {

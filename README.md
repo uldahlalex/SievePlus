@@ -118,9 +118,9 @@ using Microsoft.Extensions.Options;
 public class ApplicationSievePlusProcessor : SievePlusProcessor
 {
     public ApplicationSievePlusProcessor(
-        IOptions<SieveOptions> options,
-        ISieveCustomSortMethods? customSortMethods = null,
-        ISieveCustomFilterMethods? customFilterMethods = null)
+        IOptions<SievePlusOptions> options,
+        ISievePlusCustomSortMethods? customSortMethods = null,
+        ISievePlusCustomFilterMethods? customFilterMethods = null)
         : base(options, customSortMethods, customFilterMethods)
     {
     }
@@ -160,9 +160,10 @@ public class ProductsController : ControllerBase
         _sieve = sieve;
     }
 
-    [HttpGet]
+    //You can also make GET with FromQuery, but I prefer POST+FromBody
+    [HttpPost]
     public async Task<ActionResult<List<Product>>> GetProducts(
-        [FromQuery] SievePlusModel model)
+        [FromBody] SievePlusModel model)
     {
         var query = _db.Products.AsNoTracking();
 

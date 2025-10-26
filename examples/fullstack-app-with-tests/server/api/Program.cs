@@ -31,8 +31,7 @@ public class Program
                             services.AddDbContext<MyDbContext>((services, options) =>
                             {
                                 options.UseNpgsql(connectionString);
-                                // options.UseQueryTrackingBehavior(QueryTrackingBehavior
-                                //     .NoTrackingWithIdentityResolution);
+                  
                             });
         }
         else
@@ -45,6 +44,7 @@ public class Program
         services.AddControllers().AddJsonOptions(opts =>
         {
             opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+            opts.JsonSerializerOptions.MaxDepth = 128;
         });
         services.AddOpenApiDocument(config =>
         {
@@ -63,8 +63,9 @@ public class Program
             options.MaxPageSize = 100;
         });
         services.AddScoped<IComputerStoreService, ComputerStoreService>();
-        // services.AddScoped<ISievePlusProcessor, ApplicationSievePlusProcessor>();
-        // services.AddScoped<SievePlusProcessor, ApplicationSievePlusProcessor>();
+        services.AddScoped<SievePlusProcessor, ApplicationSievePlusProcessor>();
+
+
     }
 
     public static void Main()
