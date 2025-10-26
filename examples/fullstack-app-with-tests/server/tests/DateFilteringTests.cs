@@ -5,7 +5,7 @@ using Sieve.Plus.QueryBuilder;
 
 namespace tests;
 
-public class DateFilteringTests(ILibraryService libraryService,
+public class DateFilteringTests(
     MyDbContext ctx,
     ITestOutputHelper outputHelper,
     ISeeder seeder)

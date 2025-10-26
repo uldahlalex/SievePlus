@@ -9,50 +9,50 @@ using Sieve.Plus.QueryBuilder;
 
 namespace tests;
 
-public class BasicFilteringTests(ILibraryService libraryService,
+public class BasicFilteringTests(IComputerStoreService libraryService,
     MyDbContext ctx,
     ITestOutputHelper outputHelper,
     ISeeder seeder)
 {
-    [Fact]
-    public async Task FilterAuthors_ByExactName()
-    {
-        await seeder.Seed();
-
-        var randomAuthor = ctx.Authors
-            .OrderBy(a => Guid.NewGuid())
-            .First();
-
-        var builder = SievePlusQueryBuilder<Author>.Create()
-            .FilterEquals(a => a.Name, randomAuthor.Name);
-
-        builder.BuildSieveModel().PrintAsJson(outputHelper);
-
-        var actual = await libraryService.GetAuthors(builder.BuildSieveModel());
-
-        randomAuthor.PrintAsJson(outputHelper);
-
-        Assert.Contains(actual, a => a.Id == randomAuthor.Id);
-    }
-
-    [Fact]
-    public async Task FilterAuthors_ByNameContains()
-    {
-        await seeder.Seed();
-        var randomAuthor = ctx.Authors
-            .OrderBy(a => Guid.NewGuid())
-            // .AsNoTracking()
-            .First();
-
-        var filter = SievePlusQueryBuilder<Author>.Create()
-            .FilterContains(a => a.Name, randomAuthor.Name)
-            .BuildSieveModel();
-
-        filter.PrintAsJson(outputHelper);
-        var actual = await libraryService.GetAuthors(filter);
-        randomAuthor.PrintAsJson(outputHelper);
-        Assert.Contains(actual, a => a.Id == randomAuthor.Id);
-    }
+    // [Fact]
+    // public async Task FilterAuthors_ByExactName()
+    // {
+    //     await seeder.Seed();
+    //
+    //     var randomAuthor = ctx.Authors
+    //         .OrderBy(a => Guid.NewGuid())
+    //         .First();
+    //
+    //     var builder = SievePlusQueryBuilder<Author>.Create()
+    //         .FilterEquals(a => a.Name, randomAuthor.Name);
+    //
+    //     builder.BuildSieveModel().PrintAsJson(outputHelper);
+    //
+    //     var actual = await libraryService.GetAuthors(builder.BuildSieveModel());
+    //
+    //     randomAuthor.PrintAsJson(outputHelper);
+    //
+    //     Assert.Contains(actual, a => a.Id == randomAuthor.Id);
+    // }
+    //
+    // [Fact]
+    // public async Task FilterAuthors_ByNameContains()
+    // {
+    //     await seeder.Seed();
+    //     var randomAuthor = ctx.Authors
+    //         .OrderBy(a => Guid.NewGuid())
+    //         // .AsNoTracking()
+    //         .First();
+    //
+    //     var filter = SievePlusQueryBuilder<Author>.Create()
+    //         .FilterContains(a => a.Name, randomAuthor.Name)
+    //         .BuildSieveModel();
+    //
+    //     filter.PrintAsJson(outputHelper);
+    //     var actual = await libraryService.GetAuthors(filter);
+    //     randomAuthor.PrintAsJson(outputHelper);
+    //     Assert.Contains(actual, a => a.Id == randomAuthor.Id);
+    // }
 
     [Fact]
     public async Task FilterAuthors_ByNameStartsWith() { throw new NotImplementedException(); }

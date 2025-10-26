@@ -5,7 +5,7 @@ using Sieve.Plus.QueryBuilder;
 
 namespace tests;
 
-public class EdgeCasesTests(ILibraryService libraryService,
+public class EdgeCasesTests(
     MyDbContext ctx,
     ITestOutputHelper outputHelper,
     ISeeder seeder)

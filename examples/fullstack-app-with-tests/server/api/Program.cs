@@ -63,9 +63,8 @@ public class Program
             options.MaxPageSize = 100;
         });
         services.AddScoped<IComputerStoreService, ComputerStoreService>();
+        services.AddScoped<ISievePlusProcessor, ApplicationSievePlusProcessor>();
         services.AddScoped<SievePlusProcessor, ApplicationSievePlusProcessor>();
-
-
     }
 
     public static void Main()

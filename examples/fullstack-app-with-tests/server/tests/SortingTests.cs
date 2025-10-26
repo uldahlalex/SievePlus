@@ -5,7 +5,7 @@ using Sieve.Plus.QueryBuilder;
 
 namespace tests;
 
-public class SortingTests(ILibraryService libraryService,
+public class SortingTests(
     MyDbContext ctx,
     ITestOutputHelper outputHelper,
     ISeeder seeder)

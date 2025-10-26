@@ -5,7 +5,7 @@ using Sieve.Plus.QueryBuilder;
 
 namespace tests;
 
-public class IntricateFeaturesTests(ILibraryService libraryService,
+public class IntricateFeaturesTests(
     MyDbContext ctx,
     ITestOutputHelper outputHelper,
     ISeeder seeder)

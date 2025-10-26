@@ -5,7 +5,7 @@ using Sieve.Plus.QueryBuilder;
 
 namespace tests;
 
-public class FilterSortPaginationTests(ILibraryService libraryService,
+public class FilterSortPaginationTests(
     MyDbContext ctx,
     ITestOutputHelper outputHelper,
     ISeeder seeder)

@@ -15,7 +15,7 @@ namespace Sieve.Plus.Services
     public class SievePlusQueryMapper<TQueryModel, TEntity>
         where TQueryModel : ISievePlusQueryModel
     {
-        internal Dictionary<string, QueryPropertyMapping> Mappings { get; } = new Dictionary<string, QueryPropertyMapping>();
+        internal Dictionary<string, QueryPropertyMapping> Mappings { get; } = new Dictionary<string, QueryPropertyMapping>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Map a query model property to an entity property expression.
