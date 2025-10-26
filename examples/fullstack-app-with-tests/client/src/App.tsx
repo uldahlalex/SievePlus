@@ -2,14 +2,12 @@ import {createBrowserRouter, RouterProvider} from "react-router";
 import Home from "./Components/Home.tsx";
 import {DevTools} from "jotai-devtools";
 import 'jotai-devtools/styles.css'
-import Books from "./Components/Books.tsx";
-import Authors from "./Components/Authors.tsx";
-import Genres from "./Components/Genres.tsx";
+import Computers from "./Components/Computers.tsx";
 import {Toaster} from "react-hot-toast";
 
 
 function App() {
-    
+
 
 return (
     <>
@@ -19,16 +17,8 @@ return (
                 element: <Home/>,
                 children: [
                     {
-                        path: 'books',
-                        element: <Books/>
-                    },
-                    {
-                        path: 'authors',
-                        element: <Authors/>
-                    },
-                    {
-                        path: 'genres',
-                        element: <Genres/>
+                        path: '',
+                        element: <Computers/>
                     }
                 ]
             }

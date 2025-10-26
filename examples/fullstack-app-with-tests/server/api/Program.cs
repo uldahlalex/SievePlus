@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using api.DTOs.QueryModels;
 using api.Services;
 using dataccess;
 using Microsoft.EntityFrameworkCore;
@@ -47,12 +48,13 @@ public class Program
         });
         services.AddOpenApiDocument(config =>
         {
-            // Add string constants to schemas - generates TypeScript constants
-            config.AddStringConstants(typeof(SieveConstants));
+            // Add query models to Swagger for TypeScript generation
+            config.AddTypeToSwagger<ComputerQueryModel>();
+            config.AddTypeToSwagger<BrandQueryModel>();
+            config.AddTypeToSwagger<CategoryQueryModel>();
         });
         services.AddCors();
-        services.AddScoped<ILibraryService, LibraryService>();
-        services.AddScoped<ISeeder, SieveTestSeeder>();
+        services.AddScoped<ISeeder, ComputerStoreSeeder>();
         services.AddExceptionHandler<MyGlobalExceptionHandler>();
         services.Configure<SievePlusOptions>(options =>
         {
@@ -60,8 +62,9 @@ public class Program
             options.DefaultPageSize = 10;
             options.MaxPageSize = 100;
         });
-     
-        services.AddScoped<ISievePlusProcessor, ApplicationSievePlusProcessor>();
+        services.AddScoped<IComputerStoreService, ComputerStoreService>();
+        // services.AddScoped<ISievePlusProcessor, ApplicationSievePlusProcessor>();
+        // services.AddScoped<SievePlusProcessor, ApplicationSievePlusProcessor>();
     }
 
     public static void Main()
@@ -71,10 +74,13 @@ public class Program
         ConfigureServices(builder.Services);
         var app = builder.Build();
 
-
-        var appOptions = app.Services.GetRequiredService<AppOptions>();
-        //Here im just checking that I can get the "Db" connection string - it throws exception if not minimum 1 length
-        Validator.ValidateObject(appOptions, new ValidationContext(appOptions), true);
+        // Only validate AppOptions in Production (Development uses Testcontainers, doesn't need Db config)
+        if (app.Environment.IsProduction())
+        {
+            var appOptions = app.Services.GetRequiredService<AppOptions>();
+            //Here im just checking that I can get the "Db" connection string - it throws exception if not minimum 1 length
+            Validator.ValidateObject(appOptions, new ValidationContext(appOptions), true);
+        }
         app.UseExceptionHandler(config => { });
         app.UseOpenApi();
         app.UseSwaggerUi();

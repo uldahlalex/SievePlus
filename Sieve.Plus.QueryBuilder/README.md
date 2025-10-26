@@ -1,257 +1,158 @@
-# Sieve.QueryBuilder.Fork
+# Sieve.Plus.QueryBuilder
 
-Type-safe query builder for [Sieve.Fork](https://github.com/uldahlalex/Sieve) with full OR query support and round-trip parsing.
+> **Type-safe query builder for Sieve.Plus with powerful OR queries and parentheses grouping**
+
+Build Sieve.Plus queries with compile-time safety, IntelliSense support, and full OR query capabilities including parentheses grouping.
+
+[![NuGet Release](https://img.shields.io/nuget/v/Sieve.Plus.QueryBuilder)](https://www.nuget.org/packages/Sieve.Plus.QueryBuilder)
 
 ## Features
 
 - ✅ **Type-safe query building** - Use lambda expressions instead of magic strings
-- ✅ **OR query support** - Full support for `||` operator introduced in Sieve.Fork 2.6.0
+- ✅ **Powerful OR queries** - Full support for `||` operator and parentheses grouping
 - ✅ **Query models** - IntelliSense for custom mapped properties
 - ✅ **Round-trip parsing** - Parse query strings and SieveModels back to builders
 - ✅ **Inspection API** - Examine filters, filter groups, and sorts programmatically
-- ✅ **All operators** - ==, !=, @=, _=, _-=, >, <, >=, <=
+- ✅ **All operators** - `==`, `!=`, `@=`, `_=`, `>`, `<`, `>=`, `<=`
 - ✅ **Fluent API** - Chain methods for readable construction
 - ✅ **Multi-framework** - Supports netstandard2.0 → net9.0
 
 ## Installation
 
 ```bash
-dotnet add package Sieve.QueryBuilder.Fork
-dotnet add package Sieve.Fork
+dotnet add package Sieve.Plus.QueryBuilder
+dotnet add package Sieve.Plus
 ```
 
 ## Quick Start
 
-### Building Queries with OR Support
+### Basic Query Building
 
 ```csharp
-using Sieve.QueryBuilder;
+using Sieve.Plus.QueryBuilder;
 
-// Simple OR query
-var queryString = SieveQueryBuilder<Product>.Create()
-    .FilterEquals(p => p.Category, "Electronics")
-    .Or()
-    .FilterEquals(p => p.Category, "Computers")
-    .BuildQueryString();
+public class Product
+{
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string Category { get; set; }
+}
 
-// Result: "filters=Category==Electronics || Category==Computers"
+// Build a type-safe query
+var sieveModel = SievePlusQueryBuilder<Product>.Create()
+    .FilterContains(p => p.Name, "laptop")
+    .FilterGreaterThan(p => p.Price, 500)
+    .SortByDescending(p => p.Price)
+    .Page(1)
+    .PageSize(20)
+    .BuildSieveModel();
+
+// Use with Sieve processor
+var results = _sieveProcessor.Apply(sieveModel, _db.Products);
 ```
 
-### Complex AND/OR Combinations
+## Powerful OR Queries
+
+### Simple OR
 
 ```csharp
-// (Category == Electronics AND Price > 100) OR (Category == Books AND Price > 20)
-var query = SieveQueryBuilder<Product>.Create()
+// Products where category is Electronics OR price is greater than $100
+var query = SievePlusQueryBuilder<Product>.Create()
     .FilterEquals(p => p.Category, "Electronics")
+    .Or()
     .FilterGreaterThan(p => p.Price, 100)
-    .Or()
-    .FilterEquals(p => p.Category, "Books")
-    .FilterGreaterThan(p => p.Price, 20)
-    .BuildQueryString();
+    .BuildFiltersString();
 
-// Result: "filters=Category==Electronics,Price>100 || Category==Books,Price>20"
+// Output: "Category==Electronics || Price>100"
 ```
 
-## AND/OR Logic: Evaluation Order & Hierarchy
+### Parentheses Grouping
 
-Understanding how Sieve.Plus evaluates AND/OR logic is crucial for building correct queries.
-
-### Key Principle: OR has Higher Priority (Group Separator)
-
-**The `||` (OR) operator acts as a GROUP SEPARATOR, NOT a logical operator with precedence.**
-
-Think of it like this:
-- **Comma (`,`)** = AND within a group
-- **Double-pipe (`||`)** = Separates independent filter groups
-- Groups are combined with OR logic
-- Within each group, filters are combined with AND logic
-
-### Evaluation Process
-
-```
-Step 1: Split by || to create filter groups
-Step 2: Within each group, combine filters with AND
-Step 3: Combine all groups with OR
-```
-
-### Examples with Evaluation Order
-
-#### Example 1: Simple AND within groups, OR between groups
-```csharp
-// Query Builder
-var query = SieveQueryBuilder<Product>.Create()
-    .FilterEquals(p => p.Category, "Electronics")  // Group 1, Filter 1
-    .FilterGreaterThan(p => p.Price, 100)          // Group 1, Filter 2
-    .Or()                                           // Start Group 2
-    .FilterEquals(p => p.InStock, true)            // Group 2, Filter 1
-    .BuildQueryString();
-
-// Output: "filters=Category==Electronics,Price>100 || InStock==true"
-
-// Evaluation (Pseudocode):
-// Group 1: (Category == "Electronics" AND Price > 100)
-// Group 2: (InStock == true)
-// Final: (Group 1) OR (Group 2)
-// SQL equivalent: WHERE (Category = 'Electronics' AND Price > 100) OR (InStock = true)
-```
-
-#### Example 2: Multiple OR groups
-```csharp
-var query = SieveQueryBuilder<Product>.Create()
-    .FilterEquals(p => p.Status, "New")      // Group 1
-    .Or()
-    .FilterEquals(p => p.Status, "Sale")     // Group 2
-    .Or()
-    .FilterEquals(p => p.Status, "Clearance") // Group 3
-    .BuildQueryString();
-
-// Output: "filters=Status==New || Status==Sale || Status==Clearance"
-// Evaluation: (Status == "New") OR (Status == "Sale") OR (Status == "Clearance")
-```
-
-#### Example 3: Complex business logic
-```csharp
-// Find products that are:
-// (Premium AND expensive) OR (On sale regardless of price) OR (High rated AND in stock)
-var query = SieveQueryBuilder<Product>.Create()
-    .FilterEquals(p => p.Tier, "Premium")          // Group 1, Filter 1
-    .FilterGreaterThan(p => p.Price, 1000)         // Group 1, Filter 2
-    .Or()                                           // Start Group 2
-    .FilterEquals(p => p.OnSale, true)             // Group 2, Filter 1
-    .Or()                                           // Start Group 3
-    .FilterGreaterThanOrEqual(p => p.Rating, 4.5)  // Group 3, Filter 1
-    .FilterEquals(p => p.InStock, true)            // Group 3, Filter 2
-    .BuildQueryString();
-
-// Output: "filters=Tier==Premium,Price>1000 || OnSale==true || Rating>=4.5,InStock==true"
-
-// Evaluation:
-// Group 1: (Tier == "Premium" AND Price > 1000)
-// Group 2: (OnSale == true)
-// Group 3: (Rating >= 4.5 AND InStock == true)
-// Final: (Group 1) OR (Group 2) OR (Group 3)
-```
-
-#### Example 4: Why order matters within groups (AND is associative, but clarity helps)
-```csharp
-// These two produce IDENTICAL results (AND is commutative and associative)
-var query1 = SieveQueryBuilder<Product>.Create()
-    .FilterEquals(p => p.Category, "Books")
-    .FilterGreaterThan(p => p.Price, 20)
-    .BuildQueryString();
-// Output: "filters=Category==Books,Price>20"
-// Evaluation: (Category == "Books" AND Price > 20)
-
-var query2 = SieveQueryBuilder<Product>.Create()
-    .FilterGreaterThan(p => p.Price, 20)
-    .FilterEquals(p => p.Category, "Books")
-    .BuildQueryString();
-// Output: "filters=Price>20,Category==Books"
-// Evaluation: (Price > 20 AND Category == "Books")
-// SAME RESULT - order doesn't affect outcome, only readability
-```
-
-### Mental Model: Parentheses Visualization
-
-Think of the query builder like this:
+Use `BeginGroup()` and `EndGroup()` for explicit parentheses:
 
 ```csharp
-builder
-    .Filter1()   // (Filter1
-    .Filter2()   //  AND Filter2
-    .Filter3()   //  AND Filter3)
-    .Or()        // OR
-    .Filter4()   // (Filter4
-    .Filter5()   //  AND Filter5)
-    .Or()        // OR
-    .Filter6()   // (Filter6)
+// (Category is Electronics OR Computers) AND Price > $500
+var query = SievePlusQueryBuilder<Product>.Create()
+    .BeginGroup()
+        .FilterEquals(p => p.Category, "Electronics")
+        .Or()
+        .FilterEquals(p => p.Category, "Computers")
+    .EndGroup()
+    .FilterGreaterThan(p => p.Price, 500)
+    .BuildFiltersString();
+
+// Output: "(Category==Electronics || Category==Computers),Price>500"
 ```
 
-Each `.Or()` call closes the current group and starts a new one.
+### Helper Method: FilterWithAlternatives
 
-### Common Pitfalls
-
-❌ **WRONG - Thinking OR has lower precedence than AND:**
-```
-"A==1,B==2 || C==3"
-Incorrect interpretation: A==1 AND (B==2 OR C==3)
-```
-
-✅ **CORRECT - OR separates groups:**
-```
-"A==1,B==2 || C==3"
-Correct interpretation: (A==1 AND B==2) OR (C==3)
-```
-
-### Rule of Thumb
-
-**Always read from left to right, splitting on `||` first:**
-
-1. Split the filter string by ` || ` to get groups
-2. Within each group, split by `,` and combine with AND
-3. Combine all groups with OR
-
-### Real-World Example: Pricerunner Computer Filtering
-
-A practical example showing how to filter computers with processor choice while maintaining consistent price and screen size constraints:
+Convenient method for filtering by multiple values on one property:
 
 ```csharp
-// Scenario: User wants laptops with EITHER Intel i9 OR AMD Ryzen 9 processor
-// BUT all results must be within $1000-$2000 price range
-// AND have screen size between 14-16 inches
+// Products with processor Intel i9, AMD Ryzen 9, or Apple M2, and price > $1000
+var query = SievePlusQueryBuilder<Computer>.Create()
+    .FilterWithAlternatives(
+        c => c.Processor,
+        new[] { "Intel i9", "AMD Ryzen 9", "Apple M2" },
+        b => b.FilterGreaterThan(c => c.Price, 1000)
+    )
+    .BuildFiltersString();
 
-// ❌ WRONG APPROACH - This will give unexpected results
-var wrongQuery = SieveQueryBuilder<Computer>.Create()
-    .FilterEquals(c => c.Processor, "Intel i9")
-    .Or()
-    .FilterEquals(c => c.Processor, "AMD Ryzen 9")
+// Output: "(Processor==Intel i9 || Processor==AMD Ryzen 9 || Processor==Apple M2),Price>1000"
+```
+
+### Complex Nested Groups
+
+```csharp
+// ((Title A OR Title B) AND Pages > 100) AND Price < 50
+var query = SievePlusQueryBuilder<Book>.Create()
+    .BeginGroup()
+        .BeginGroup()
+            .FilterEquals(b => b.Title, "Book A")
+            .Or()
+            .FilterEquals(b => b.Title, "Book B")
+        .EndGroup()
+        .FilterGreaterThan(b => b.Pages, 100)
+    .EndGroup()
+    .FilterLessThan(b => b.Price, 50)
+    .BuildFiltersString();
+
+// Output: "((Title==Book A || Title==Book B),Pages>100),Price<50"
+```
+
+## Real-World Example: Pricerunner-Style Filtering
+
+A common pattern for e-commerce filtering where users select from options with shared constraints:
+
+```csharp
+public class Computer
+{
+    public string Processor { get; set; }
+    public decimal Price { get; set; }
+    public decimal ScreenSize { get; set; }
+}
+
+// User wants: (Intel i9 OR AMD Ryzen 9) with price $1000-$2000 and screen 14-16"
+var query = SievePlusQueryBuilder<Computer>.Create()
+    .BeginGroup()
+        .FilterEquals(c => c.Processor, "Intel i9")
+        .Or()
+        .FilterEquals(c => c.Processor, "AMD Ryzen 9")
+    .EndGroup()
     .FilterGreaterThanOrEqual(c => c.Price, 1000)
     .FilterLessThanOrEqual(c => c.Price, 2000)
     .FilterGreaterThanOrEqual(c => c.ScreenSize, 14)
     .FilterLessThanOrEqual(c => c.ScreenSize, 16)
-    .BuildQueryString();
+    .BuildFiltersString();
 
-// Output: "filters=Processor==Intel i9 || Processor==AMD Ryzen 9,Price>=1000,Price<=2000,ScreenSize>=14,ScreenSize<=16"
-// Problem: This means:
-// (Processor == "Intel i9")
-// OR
-// (Processor == "AMD Ryzen 9" AND Price >= 1000 AND Price <= 2000 AND ScreenSize >= 14 AND ScreenSize <= 16)
-//
-// This will return Intel i9 laptops at ANY price and ANY screen size! 🐛
-
-// ✅ CORRECT APPROACH - Repeat shared constraints in each OR group
-var correctQuery = SieveQueryBuilder<Computer>.Create()
-    // Group 1: Intel i9 with all constraints
-    .FilterEquals(c => c.Processor, "Intel i9")
-    .FilterGreaterThanOrEqual(c => c.Price, 1000)
-    .FilterLessThanOrEqual(c => c.Price, 2000)
-    .FilterGreaterThanOrEqual(c => c.ScreenSize, 14)
-    .FilterLessThanOrEqual(c => c.ScreenSize, 16)
-    .Or()
-    // Group 2: AMD Ryzen 9 with same constraints
-    .FilterEquals(c => c.Processor, "AMD Ryzen 9")
-    .FilterGreaterThanOrEqual(c => c.Price, 1000)
-    .FilterLessThanOrEqual(c => c.Price, 2000)
-    .FilterGreaterThanOrEqual(c => c.ScreenSize, 14)
-    .FilterLessThanOrEqual(c => c.ScreenSize, 16)
-    .BuildQueryString();
-
-// Output: "filters=Processor==Intel i9,Price>=1000,Price<=2000,ScreenSize>=14,ScreenSize<=16 || Processor==AMD Ryzen 9,Price>=1000,Price<=2000,ScreenSize>=14,ScreenSize<=16"
-
-// This correctly means:
-// (Processor == "Intel i9" AND Price >= 1000 AND Price <= 2000 AND ScreenSize >= 14 AND ScreenSize <= 16)
-// OR
-// (Processor == "AMD Ryzen 9" AND Price >= 1000 AND Price <= 2000 AND ScreenSize >= 14 AND ScreenSize <= 16)
-// ✅ Perfect!
-
-// SQL Equivalent:
-// WHERE (Processor = 'Intel i9' AND Price >= 1000 AND Price <= 2000 AND ScreenSize >= 14 AND ScreenSize <= 16)
-//    OR (Processor = 'AMD Ryzen 9' AND Price >= 1000 AND Price <= 2000 AND ScreenSize >= 14 AND ScreenSize <= 16)
+// Output: "(Processor==Intel i9 || Processor==AMD Ryzen 9),Price>=1000,Price<=2000,ScreenSize>=14,ScreenSize<=16"
 ```
 
-#### Building Dynamic Pricerunner Queries
+This expands to a cartesian product:
+- `(Processor==Intel i9),Price>=1000,Price<=2000,ScreenSize>=14,ScreenSize<=16`
+- `(Processor==AMD Ryzen 9),Price>=1000,Price<=2000,ScreenSize>=14,ScreenSize<=16`
 
-For better maintainability when dealing with multiple OR groups with shared constraints:
+### Dynamic Builder for Multiple Options
 
 ```csharp
 public class ComputerFilterBuilder
@@ -277,9 +178,7 @@ public class ComputerFilterBuilder
         for (int i = 0; i < processorOptions.Length; i++)
         {
             if (i > 0)
-            {
                 builder.Or(); // Start new OR group for each processor after the first
-            }
 
             // Add processor filter
             builder.FilterEquals(c => c.Processor, processorOptions[i]);
@@ -319,26 +218,31 @@ var query = filterBuilder.BuildQuery(new[] { "Intel i9", "AMD Ryzen 9", "Apple M
 // Perfect for Pricerunner-style filtering!
 ```
 
-#### Key Takeaway
-
-**When using OR for alternative values (like different processors), you must repeat ALL shared constraints in EACH OR group.**
-
-There is no "global AND" that applies across all OR groups - each group is independent.
-
-### Building SieveModel
+## All Filter Operators
 
 ```csharp
-var sieveModel = SieveQueryBuilder<Author>.Create()
-    .FilterContains(a => a.Name, "Bob")
-    .Or()
-    .FilterContains(a => a.Name, "Alice")
-    .SortByDescending(a => a.CreatedAt)
-    .Page(1)
-    .PageSize(25)
-    .BuildSieveModel();
+var builder = SievePlusQueryBuilder<Product>.Create()
+    .FilterEquals(p => p.Id, 42)                              // ==
+    .FilterNotEquals(p => p.Status, "Deleted")                // !=
+    .FilterContains(p => p.Description, "awesome")            // @=
+    .FilterStartsWith(p => p.Name, "Pro")                     // _=
+    .FilterGreaterThan(p => p.Price, 99.99m)                  // >
+    .FilterLessThan(p => p.Stock, 10)                         // <
+    .FilterGreaterThanOrEqual(p => p.Rating, 4.5)             // >=
+    .FilterLessThanOrEqual(p => p.Weight, 5.0)                // <=
+    .FilterByName("CustomProperty", "==", "value");           // Custom properties
+```
 
-// Use with Sieve processor
-var results = sieveProcessor.Apply(sieveModel, query);
+## Sorting
+
+```csharp
+var query = SievePlusQueryBuilder<Product>.Create()
+    .SortBy(p => p.Category)              // Ascending
+    .SortByDescending(p => p.CreatedAt)   // Descending
+    .SortByName("CustomSort", true)       // Custom property, descending
+    .BuildSortsString();
+
+// Output: "Category,-CreatedAt,-CustomSort"
 ```
 
 ## Query Models - Type-Safe Custom Properties
@@ -346,7 +250,7 @@ var results = sieveProcessor.Apply(sieveModel, query);
 Query models provide compile-time safety for custom mapped properties:
 
 ```csharp
-using Sieve.QueryBuilder;
+using Sieve.Plus.QueryBuilder;
 
 // Define query model matching your SieveProcessor configuration
 public class AuthorQueryModel : ISieveQueryModel
@@ -356,12 +260,27 @@ public class AuthorQueryModel : ISieveQueryModel
     public int? BooksCount { get; set; }  // Custom mapped property
 }
 
-// Type-safe queries with IntelliSense
-var query = SieveQueryBuilder<AuthorQueryModel>.Create()
+// In your SieveProcessor
+public class ApplicationSieveProcessor : SievePlusProcessor
+{
+    protected override SievePropertyMapper MapProperties(SievePropertyMapper mapper)
+    {
+        mapper.Property<Author>(a => a.Books.Count)
+            .CanFilter()
+            .CanSort()
+            .HasName("BooksCount");  // Maps to query model property
+
+        return mapper;
+    }
+}
+
+// Type-safe queries with IntelliSense for custom properties
+var query = SievePlusQueryBuilder<AuthorQueryModel>.Create()
     .FilterContains(a => a.Name, "Bob")
     .Or()
-    .FilterGreaterThan(a => a.BooksCount, 5)  // IntelliSense!
-    .BuildQueryString();
+    .FilterGreaterThan(a => a.BooksCount, 5)  // IntelliSense works!
+    .SortByDescending(a => a.BooksCount)
+    .BuildSieveModel();
 ```
 
 ## Round-Trip Parsing
@@ -370,8 +289,8 @@ var query = SieveQueryBuilder<AuthorQueryModel>.Create()
 
 ```csharp
 // Parse existing query string
-var builder = SieveQueryBuilder<Product>.ParseQueryString(
-    "filters=Category==Electronics || Price>100&sorts=-CreatedAt&page=1&pageSize=20"
+var builder = SievePlusQueryBuilder<Product>.ParseQueryString(
+    "filters=(Category==Electronics || Category==Computers),Price>500&sorts=-CreatedAt&page=1&pageSize=20"
 );
 
 // Modify and rebuild
@@ -382,7 +301,7 @@ builder.FilterEquals(p => p.InStock, true)
 ### Parse from SieveModel
 
 ```csharp
-var existingModel = new SieveModel
+var existingModel = new SievePlusModel
 {
     Filters = "Name@=Bob || Age>25",
     Sorts = "-CreatedAt",
@@ -390,7 +309,13 @@ var existingModel = new SieveModel
     PageSize = 20
 };
 
-var builder = SieveQueryBuilder<Person>.FromSieveModel(existingModel);
+var builder = SievePlusQueryBuilder<Person>.FromSieveModel(existingModel);
+
+// Continue building
+builder.FilterEquals(p => p.Active, true)
+       .SortBy(p => p.Name);
+
+var updatedModel = builder.BuildSieveModel();
 ```
 
 ## Inspection API
@@ -398,7 +323,7 @@ var builder = SieveQueryBuilder<Person>.FromSieveModel(existingModel);
 Examine filters and filter groups programmatically:
 
 ```csharp
-var builder = SieveQueryBuilder<Product>.Create()
+var builder = SievePlusQueryBuilder<Product>.Create()
     .FilterEquals(p => p.Category, "Books")
     .FilterGreaterThan(p => p.Price, 20)
     .Or()
@@ -425,42 +350,59 @@ foreach (var sort in sorts)
 // Check for specific filters
 bool hasNameFilter = builder.HasFilter("Name");
 bool hasCreatedAtSort = builder.HasSort("CreatedAt");
+
+// Get pagination
+int? page = builder.GetPage();
+int? pageSize = builder.GetPageSize();
 ```
 
-## All Filter Operators
+## Output Formats
+
+### SieveModel Object
 
 ```csharp
-var builder = SieveQueryBuilder<Product>.Create()
-    .FilterEquals(p => p.Id, 42)                              // ==
-    .FilterNotEquals(p => p.Status, "Deleted")                // !=
-    .FilterContains(p => p.Description, "awesome")            // @=
-    .FilterStartsWith(p => p.Name, "Pro")                     // _=
-    .FilterGreaterThan(p => p.Price, 99.99m)                  // >
-    .FilterLessThan(p => p.Stock, 10)                         // <
-    .FilterGreaterThanOrEqual(p => p.Rating, 4.5)             // >=
-    .FilterLessThanOrEqual(p => p.Weight, 5.0)                // <=
-    .FilterByName("CustomProperty", "==", "value");           // Custom properties
+var model = builder.BuildSieveModel();
+// Use directly with Sieve processor
+var results = _sieveProcessor.Apply(model, query);
 ```
 
-## Sorting
+### Query String
 
 ```csharp
-var query = SieveQueryBuilder<Product>.Create()
-    .SortBy(p => p.Category)              // Ascending
-    .SortByDescending(p => p.CreatedAt)   // Descending
-    .SortByName("CustomSort", true)       // Custom property, descending
-    .BuildQueryString();
-
-// Result: "sorts=Category,-CreatedAt,-CustomSort"
+string queryString = builder.BuildQueryString();
+// "filters=(Name@=Bob || Age>25)&sorts=-CreatedAt&page=1&pageSize=20"
 ```
 
-## Real-World Example
+### Individual Components
 
 ```csharp
-public class ProductController : ControllerBase
+string filters = builder.BuildFiltersString();
+// "(Name@=Bob || Age>25)"
+
+string sorts = builder.BuildSortsString();
+// "-CreatedAt,Name"
+
+int? page = builder.GetPage();         // 1
+int? pageSize = builder.GetPageSize();  // 20
+```
+
+## ASP.NET Core Integration
+
+### Basic Controller
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class ProductsController : ControllerBase
 {
-    private readonly ISieveProcessor _sieveProcessor;
-    private readonly DbContext _db;
+    private readonly ApplicationDbContext _db;
+    private readonly ISievePlusProcessor _sieve;
+
+    public ProductsController(ApplicationDbContext db, ISievePlusProcessor sieve)
+    {
+        _db = db;
+        _sieve = sieve;
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<Product>>> GetProducts(
@@ -470,7 +412,7 @@ public class ProductController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var builder = SieveQueryBuilder<Product>.Create()
+        var builder = SievePlusQueryBuilder<Product>.Create()
             .Page(page)
             .PageSize(pageSize)
             .SortByDescending(p => p.CreatedAt);
@@ -499,43 +441,16 @@ public class ProductController : ControllerBase
 
         var sieveModel = builder.BuildSieveModel();
         var query = _db.Products.AsNoTracking();
-        var results = _sieveProcessor.Apply(sieveModel, query);
+        var results = _sieve.Apply(sieveModel, query);
 
         return await results.ToListAsync();
     }
 }
 ```
 
-## Output Formats
-
-### Query String
+### With Query Models
 
 ```csharp
-string queryString = builder.BuildQueryString();
-// "filters=Name@=Bob || Age>25&sorts=-CreatedAt&page=1&pageSize=20"
-```
-
-### SieveModel
-
-```csharp
-SieveModel model = builder.BuildSieveModel();
-// Use directly with Sieve processor
-```
-
-### Individual Components
-
-```csharp
-string filters = builder.BuildFiltersString();  // "Name@=Bob || Age>25"
-string sorts = builder.BuildSortsString();      // "-CreatedAt,Name"
-int? page = builder.GetPage();                  // 1
-int? pageSize = builder.GetPageSize();          // 20
-```
-
-## ASP.NET Core Integration with NSwag
-
-```csharp
-using Sieve.QueryBuilder;
-
 public class AuthorQueryModel : ISieveQueryModel
 {
     public string? Name { get; set; }
@@ -544,11 +459,24 @@ public class AuthorQueryModel : ISieveQueryModel
 
 [HttpGet(nameof(GetAuthors))]
 public async Task<List<AuthorResponseDto>> GetAuthors(
-    [FromQuery] AuthorQueryModel queryModel)  // OpenAPI/Swagger compatible!
+    [FromQuery] string? searchTerm,
+    [FromQuery] int? minBooks,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20)
 {
-    var builder = SieveQueryBuilder<AuthorQueryModel>.ParseQueryString(
-        Request.QueryString.ToString()
-    );
+    var builder = SievePlusQueryBuilder<AuthorQueryModel>.Create()
+        .Page(page)
+        .PageSize(pageSize);
+
+    if (!string.IsNullOrEmpty(searchTerm))
+    {
+        builder.FilterContains(a => a.Name, searchTerm);
+    }
+
+    if (minBooks.HasValue)
+    {
+        builder.FilterGreaterThanOrEqual(a => a.BooksCount, minBooks.Value);
+    }
 
     var sieveModel = builder.BuildSieveModel();
     var results = _sieveProcessor.Apply(sieveModel, _db.Authors);
@@ -561,41 +489,137 @@ public async Task<List<AuthorResponseDto>> GetAuthors(
 }
 ```
 
-## Version Compatibility
+## Date Handling
 
-| Sieve.QueryBuilder.Fork | Sieve.Fork | Features |
-|-------------------------|------------|----------|
-| 2.6.0                   | 2.6.0+     | Full OR query support with `\|\|` |
-| 2.6.0                   | 2.0.0+     | Basic filtering (no OR groups) |
-
-## Migration from Original
-
-If migrating from `Sieve.Query.Builder`:
+Dates are automatically formatted to ISO 8601 with UTC:
 
 ```csharp
-// Old namespace
-using SieveQueryBuilder;
+var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 
-// New namespace
-using Sieve.QueryBuilder;
+var query = SievePlusQueryBuilder<Post>.Create()
+    .FilterGreaterThanOrEqual(p => p.CreatedAt, thirtyDaysAgo)
+    .BuildFiltersString();
 
-// Old package
-dotnet remove package Sieve.Query.Builder
-
-// New package
-dotnet add package Sieve.QueryBuilder.Fork
+// Output: "CreatedAt>=2024-10-25T12:00:00.000Z"
 ```
+
+## Error Handling
+
+Mismatched `BeginGroup()` and `EndGroup()` calls throw exceptions:
+
+```csharp
+// ❌ Throws InvalidOperationException: "Unmatched BeginGroup() call - missing EndGroup()"
+var query = SievePlusQueryBuilder<Product>.Create()
+    .BeginGroup()
+        .FilterEquals(p => p.Name, "Test")
+    .BuildFiltersString();
+
+// ❌ Throws InvalidOperationException: "EndGroup() called without matching BeginGroup()"
+var query2 = SievePlusQueryBuilder<Product>.Create()
+    .FilterEquals(p => p.Name, "Test")
+    .EndGroup()
+    .BuildFiltersString();
+```
+
+## Best Practices
+
+### 1. Use Query Models for Large Projects
+
+```csharp
+// Define query models that match your SieveProcessor configuration
+public class ProductQueryModel : ISieveQueryModel
+{
+    public string? Name { get; set; }
+    public decimal? Price { get; set; }
+    public string? CategoryName { get; set; }  // Mapped from nested property
+}
+
+// Get IntelliSense and compile-time safety
+var query = SievePlusQueryBuilder<ProductQueryModel>.Create()
+    .FilterContains(p => p.CategoryName, "Electronics")  // Type-safe!
+    .BuildSieveModel();
+```
+
+### 2. Encapsulate Complex Queries
+
+```csharp
+public static class ProductQueries
+{
+    public static SievePlusQueryBuilder<Product> PopularProducts()
+    {
+        return SievePlusQueryBuilder<Product>.Create()
+            .FilterGreaterThan(p => p.Rating, 4.0)
+            .FilterGreaterThan(p => p.Sales, 1000)
+            .SortByDescending(p => p.Sales);
+    }
+
+    public static SievePlusQueryBuilder<Product> InPriceRange(decimal min, decimal max)
+    {
+        return SievePlusQueryBuilder<Product>.Create()
+            .FilterGreaterThanOrEqual(p => p.Price, min)
+            .FilterLessThanOrEqual(p => p.Price, max);
+    }
+}
+
+// Usage
+var popular = ProductQueries.PopularProducts()
+    .Page(1)
+    .PageSize(20)
+    .BuildSieveModel();
+```
+
+### 3. When Using OR, Repeat Shared Constraints
+
+When filtering with OR groups, shared constraints must be repeated in each group:
+
+```csharp
+// ❌ WRONG - Constraints only apply to second group
+var wrong = SievePlusQueryBuilder<Product>.Create()
+    .FilterEquals(p => p.Category, "Electronics")
+    .Or()
+    .FilterEquals(p => p.Category, "Computers")
+    .FilterGreaterThan(p => p.Price, 500)  // Only applies to Computers!
+    .BuildFiltersString();
+// Output: "Category==Electronics || Category==Computers,Price>500"
+
+// ✅ CORRECT - Use parentheses and repeat constraints
+var correct = SievePlusQueryBuilder<Product>.Create()
+    .BeginGroup()
+        .FilterEquals(p => p.Category, "Electronics")
+        .Or()
+        .FilterEquals(p => p.Category, "Computers")
+    .EndGroup()
+    .FilterGreaterThan(p => p.Price, 500)  // Applies to both!
+    .BuildFiltersString();
+// Output: "(Category==Electronics || Category==Computers),Price>500"
+```
+
+## Framework Support
+
+Supports the following target frameworks:
+- netstandard2.0
+- netstandard2.1
+- net6.0
+- net8.0
+- net9.0
+
+## Examples
+
+See the [unit tests](../Sieve.Plus.UnitTests/QueryBuilderParenthesesTests.cs) for comprehensive examples of all features.
+
+## Related Packages
+
+| Package | Description |
+|---------|-------------|
+| [Sieve.Plus](https://www.nuget.org/packages/Sieve.Plus) | Core filtering/sorting/pagination library |
+| [ts-sieve-plus-query-builder](https://www.npmjs.com/package/ts-sieve-plus-query-builder) | TypeScript equivalent for frontend |
 
 ## License
 
-MIT License - see LICENSE file for details.
+Apache License 2.0 - See [LICENSE](../LICENSE) for details.
 
 ## Contributing
 
-Contributions welcome! This is a companion package to [Sieve.Fork](https://github.com/uldahlalex/Sieve).
+Contributions welcome!
 
-## Links
-
-- [Sieve.Fork Documentation](https://github.com/uldahlalex/Sieve)
-- [Original Sieve](https://github.com/Biarity/Sieve)
-- [Report Issues](https://github.com/uldahlalex/Sieve/issues)
+**Repository**: [https://github.com/uldahlalex/sieveplus](https://github.com/uldahlalex/sieveplus)

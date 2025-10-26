@@ -6,24 +6,54 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/GetAuthors": {
-      "post": {
+    "/api/ComputerStore/GetComputers": {
+      "get": {
         "tags": [
-          "Library"
+          "ComputerStore"
         ],
-        "operationId": "Library_GetAuthors",
-        "requestBody": {
-          "x-name": "sieveModel",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SieveModel"
-              }
-            }
+        "operationId": "ComputerStore_GetComputers",
+        "parameters": [
+          {
+            "name": "Filters",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
           },
-          "required": true,
-          "x-position": 1
-        },
+          {
+            "name": "Sorts",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647.0,
+              "minimum": 1.0,
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647.0,
+              "minimum": 1.0,
+              "nullable": true
+            },
+            "x-position": 4
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -32,7 +62,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Author"
+                    "$ref": "#/components/schemas/Computer"
                   }
                 }
               }
@@ -41,24 +71,54 @@
         }
       }
     },
-    "/GetBooks": {
-      "post": {
+    "/api/ComputerStore/GetBrands": {
+      "get": {
         "tags": [
-          "Library"
+          "ComputerStore"
         ],
-        "operationId": "Library_GetBooks",
-        "requestBody": {
-          "x-name": "sieveModel",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SieveModel"
-              }
-            }
+        "operationId": "ComputerStore_GetBrands",
+        "parameters": [
+          {
+            "name": "Filters",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
           },
-          "required": true,
-          "x-position": 1
-        },
+          {
+            "name": "Sorts",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647.0,
+              "minimum": 1.0,
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647.0,
+              "minimum": 1.0,
+              "nullable": true
+            },
+            "x-position": 4
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -67,7 +127,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Book"
+                    "$ref": "#/components/schemas/Brand"
                   }
                 }
               }
@@ -76,24 +136,54 @@
         }
       }
     },
-    "/GetGenres": {
-      "post": {
+    "/api/ComputerStore/GetCategories": {
+      "get": {
         "tags": [
-          "Library"
+          "ComputerStore"
         ],
-        "operationId": "Library_GetGenres",
-        "requestBody": {
-          "x-name": "sieveModel",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SieveModel"
-              }
-            }
+        "operationId": "ComputerStore_GetCategories",
+        "parameters": [
+          {
+            "name": "Filters",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
           },
-          "required": true,
-          "x-position": 1
-        },
+          {
+            "name": "Sorts",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647.0,
+              "minimum": 1.0,
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647.0,
+              "minimum": 1.0,
+              "nullable": true
+            },
+            "x-position": 4
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -102,290 +192,8 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Genre"
+                    "$ref": "#/components/schemas/Category"
                   }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/CreateBook": {
-      "post": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_CreateBook",
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBookRequestDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Book"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/UpdateBook": {
-      "put": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_UpdateBook",
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBookRequestDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Book"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/DeleteBook": {
-      "delete": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_DeleteBook",
-        "parameters": [
-          {
-            "name": "bookId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Book"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/CreateAuthor": {
-      "post": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_CreateAuthor",
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAuthorRequestDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Author"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/UpdateAuthor": {
-      "put": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_UpdateAuthor",
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAuthorRequestDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Author"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/DeleteAuthor": {
-      "delete": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_DeleteAuthor",
-        "parameters": [
-          {
-            "name": "authorId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Author"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/CreateGenre": {
-      "post": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_CreateGenre",
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateGenreDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Genre"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/DeleteGenre": {
-      "delete": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_DeleteGenre",
-        "parameters": [
-          {
-            "name": "genreId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Genre"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/UpdateGenre": {
-      "put": {
-        "tags": [
-          "Library"
-        ],
-        "operationId": "Library_UpdateGenre",
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateGenreRequestDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Genre"
                 }
               }
             }
@@ -396,7 +204,7 @@
   },
   "components": {
     "schemas": {
-      "Author": {
+      "Computer": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -406,57 +214,70 @@
           "name": {
             "type": "string"
           },
-          "createdat": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "books": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Book"
-            }
-          }
-        }
-      },
-      "Book": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
+          "processor": {
             "type": "string"
           },
-          "title": {
-            "type": "string"
+          "price": {
+            "type": "number",
+            "format": "decimal"
           },
-          "pages": {
+          "screenSize": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "ram": {
             "type": "integer",
             "format": "int32"
           },
-          "createdat": {
+          "storage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "graphicsCard": {
+            "type": "string"
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "rating": {
+            "type": "number",
+            "format": "double"
+          },
+          "sales": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "genreid": {
+          "brandId": {
             "type": "string",
             "nullable": true
           },
-          "genre": {
+          "brand": {
             "nullable": true,
             "oneOf": [
               {
-                "$ref": "#/components/schemas/Genre"
+                "$ref": "#/components/schemas/Brand"
               }
             ]
           },
-          "authors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Author"
-            }
+          "categoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              }
+            ]
           }
         }
       },
-      "Genre": {
+      "Brand": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -466,203 +287,144 @@
           "name": {
             "type": "string"
           },
-          "createdat": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "books": {
+          "computers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Book"
+              "$ref": "#/components/schemas/Computer"
             }
           }
         }
       },
-      "SieveModel": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SieveModelOfFilterTermAndSortTerm"
-          },
-          {
-            "type": "object",
-            "additionalProperties": false
-          }
-        ]
-      },
-      "SieveModelOfFilterTermAndSortTerm": {
+      "Category": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "filters": {
-            "type": "string",
-            "nullable": true
+          "id": {
+            "type": "string"
           },
-          "sorts": {
-            "type": "string",
-            "nullable": true
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32",
-            "maximum": 2147483647.0,
-            "minimum": 1.0,
-            "nullable": true
-          },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32",
-            "maximum": 2147483647.0,
-            "minimum": 1.0,
-            "nullable": true
-          }
-        }
-      },
-      "CreateBookRequestDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "pages",
-          "title"
-        ],
-        "properties": {
-          "pages": {
-            "type": "integer",
-            "format": "int32",
-            "maximum": 2147483647.0,
-            "minimum": 1.0
-          },
-          "title": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      },
-      "UpdateBookRequestDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "bookIdForLookupReference",
-          "newPageCount",
-          "newTitle",
-          "authorsIds"
-        ],
-        "properties": {
-          "bookIdForLookupReference": {
-            "type": "string",
-            "minLength": 1
-          },
-          "newPageCount": {
-            "type": "integer",
-            "format": "int32",
-            "maximum": 2147483647.0,
-            "minimum": 1.0
-          },
-          "newTitle": {
-            "type": "string",
-            "minLength": 1
-          },
-          "authorsIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "genreId": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "CreateAuthorRequestDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "name"
-        ],
-        "properties": {
           "name": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      },
-      "UpdateAuthorRequestDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "authorIdForLookup",
-          "newName",
-          "booksIds"
-        ],
-        "properties": {
-          "authorIdForLookup": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
           },
-          "newName": {
+          "createdAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time"
           },
-          "booksIds": {
+          "computers": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/Computer"
             }
           }
         }
       },
-      "CreateGenreDto": {
+      "ComputerQueryModel": {
+        "title": "ComputerQueryModel",
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "name"
-        ],
         "properties": {
+          "id": {
+            "type": "string"
+          },
           "name": {
+            "type": "string"
+          },
+          "processor": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "screenSize": {
+            "type": "number",
+            "format": "decimal"
+          },
+          "ram": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "storage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "graphicsCard": {
+            "type": "string"
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "rating": {
+            "type": "number",
+            "format": "double"
+          },
+          "createdAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "isPopular": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isPremium": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isHighPerformance": {
+            "type": "boolean",
+            "nullable": true
           }
         }
       },
-      "UpdateGenreRequestDto": {
+      "BrandQueryModel": {
+        "title": "BrandQueryModel",
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "idToLookupBy",
-          "newName"
-        ],
         "properties": {
-          "idToLookupBy": {
-            "type": "string",
-            "minLength": 1
+          "id": {
+            "type": "string"
           },
-          "newName": {
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time"
+          },
+          "computerCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
-      "SieveConstants": {
+      "CategoryQueryModel": {
+        "title": "CategoryQueryModel",
         "type": "object",
-        "description": "String constants from SieveConstants",
         "additionalProperties": false,
         "properties": {
-          "GenreName": {
-            "type": "string",
-            "readOnly": true,
-            "description": "Constant value: \"GenreName\"",
-            "default": "GenreName"
+          "id": {
+            "type": "string"
           },
-          "GenreId": {
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
             "type": "string",
-            "readOnly": true,
-            "description": "Constant value: \"GenreId\"",
-            "default": "GenreId"
+            "format": "date-time"
+          },
+          "computerCount": {
+            "type": "integer",
+            "format": "int32"
           }
-        },
-        "x-constant-values": {
-          "GenreName": "GenreName",
-          "GenreId": "GenreId"
         }
       }
     }

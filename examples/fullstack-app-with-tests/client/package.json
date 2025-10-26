@@ -19,7 +19,6 @@
     "react-hot-toast": "^2.6.0",
     "dotnet-json-refs": "^1.0.0",
     "react-router": "^7.9.1",
-    "ts-sieve-query-builder": "0.2.3",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
