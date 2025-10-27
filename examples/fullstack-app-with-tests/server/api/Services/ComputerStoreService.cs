@@ -8,18 +8,18 @@ namespace api.Services;
 
 public class ComputerStoreService(MyDbContext ctx, SievePlusProcessor sievePlusProcessor) : IComputerStoreService
 {
-    public Task<List<Computer>> GetComputers(SievePlusModel sievePlusModel)
+    public Task<List<Computer>> GetComputers(SievePlusModel<ComputerQueryModel> sievePlusModel)
     {
         IQueryable<Computer> query = ctx.Computers;
 
-        query = sievePlusProcessor.Apply<Computer>(sievePlusModel, query);
+        query = sievePlusProcessor.Apply<Computer, ComputerQueryModel>(sievePlusModel, query);
 
         return query
             .AsSplitQuery()
             .ToListAsync();
     }
 
-    public Task<List<Brand>> GetBrands(SievePlusModel sievePlusModel)
+    public Task<List<Brand>> GetBrands(SievePlusModel<BrandQueryModel> sievePlusModel)
     {
         IQueryable<Brand> query = ctx.Brands;
 
@@ -33,7 +33,7 @@ public class ComputerStoreService(MyDbContext ctx, SievePlusProcessor sievePlusP
             .ToListAsync();
     }
 
-    public Task<List<Category>> GetCategories(SievePlusModel sievePlusModel)
+    public Task<List<Category>> GetCategories(SievePlusModel<CategoryQueryModel> sievePlusModel)
     {
         IQueryable<Category> query = ctx.Categories;
 

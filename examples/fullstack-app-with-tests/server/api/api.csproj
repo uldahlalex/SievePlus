@@ -13,6 +13,7 @@
         <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="*" />
         <ProjectReference Include="..\dataccess\dataccess.csproj" />
         <ProjectReference Include="..\..\..\..\Sieve.Plus\Sieve.Plus.csproj" />
+        <ProjectReference Include="..\..\..\..\Sieve.Plus.QueryBuilder\Sieve.Plus.QueryBuilder.csproj" />
     </ItemGroup>
 
 </Project>

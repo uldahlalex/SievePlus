@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Sieve.Plus.UnitTests
 {
-    public class Computer
+    public class Computer : ISievePlusQueryModel, Sieve.Plus.Models.ISievePlusQueryModel
     {
         public string Processor { get; set; }
         public decimal Price { get; set; }

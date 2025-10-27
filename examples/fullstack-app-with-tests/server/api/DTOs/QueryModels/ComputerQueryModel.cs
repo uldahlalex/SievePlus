@@ -1,4 +1,5 @@
 using Sieve.Plus.Models;
+using Sieve.Plus.QueryBuilder;
 
 namespace api.DTOs.QueryModels;
 
@@ -6,7 +7,7 @@ namespace api.DTOs.QueryModels;
 /// Query model for Computer entity - defines exactly what can be filtered and sorted.
 /// Perfect for Pricerunner-style filtering.
 /// </summary>
-public class ComputerQueryModel : ISievePlusQueryModel
+public class ComputerQueryModel : Sieve.Plus.Models.ISievePlusQueryModel, Sieve.Plus.QueryBuilder.ISievePlusQueryModel
 {
     // Basic properties
     public string Id { get; set; } = null!;

@@ -9,6 +9,16 @@ namespace Sieve.Plus.Models
 {
     public class SievePlusModel : SievePlusModel<FilterTerm, SortTerm> { }
 
+    /// <summary>
+    /// Type-safe SievePlusModel that is aware of the query model it represents.
+    /// This provides compile-time safety by ensuring the correct query model is used with the correct service methods.
+    /// </summary>
+    /// <typeparam name="TQueryModel">The query model type that defines the filterable/sortable properties</typeparam>
+    public class SievePlusModel<TQueryModel> : SievePlusModel
+        where TQueryModel : ISievePlusQueryModel
+    {
+    }
+
     [DataContract]
     public class SievePlusModel<TFilterTerm, TSortTerm> : ISievePlusModel<TFilterTerm, TSortTerm>
         where TFilterTerm : IFilterTerm, new()

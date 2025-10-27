@@ -66,5 +66,19 @@ namespace Sieve.Plus.Models
                 PageSize = request.PageSize
             };
         }
+
+        /// <summary>
+        /// Implicitly convert to typed SievePlusModel for use with typed service methods.
+        /// </summary>
+        public static implicit operator SievePlusModel<TQueryModel>(SievePlusRequest<TQueryModel> request)
+        {
+            return new SievePlusModel<TQueryModel>
+            {
+                Filters = request.Filters,
+                Sorts = request.Sorts,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }
     }
 }

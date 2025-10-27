@@ -9,8 +9,9 @@ namespace Sieve.Plus.QueryBuilder;
 /// <summary>
 /// Type-safe builder for constructing Sieve.Plus query strings
 /// </summary>
-/// <typeparam name="T">The entity type to build queries for</typeparam>
-public class SievePlusQueryBuilder<T> where T : class
+/// <typeparam name="TQueryModel">The query model type that defines the filterable/sortable properties</typeparam>
+public class SievePlusQueryBuilder<TQueryModel>
+    where TQueryModel : class, ISievePlusQueryModel, Sieve.Plus.Models.ISievePlusQueryModel
 {
     private readonly List<List<string>> _filterGroups = new() { new List<string>() };
     private int _currentGroupIndex = 0;
@@ -31,7 +32,7 @@ public class SievePlusQueryBuilder<T> where T : class
     ///        .FilterEquals(c => c.CpuModel, "AMD Ryzen 9")
     /// // Produces: "CpuModel==Intel i9 || CpuModel==AMD Ryzen 9"
     /// </example>
-    public SievePlusQueryBuilder<T> Or()
+    public SievePlusQueryBuilder<TQueryModel> Or()
     {
         // Mark current segment as OR group
         _currentSegment.IsOrGroup = true;
@@ -45,7 +46,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using equals operator (==)
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterEquals<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterEquals<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -65,7 +66,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using not equals operator (!=)
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterNotEquals<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterNotEquals<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -76,7 +77,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using contains operator (@=)
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterContains<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterContains<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -87,7 +88,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using starts with operator (_=)
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterStartsWith<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterStartsWith<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -98,7 +99,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using greater than operator (>)
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterGreaterThan<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterGreaterThan<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -109,7 +110,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using less than operator
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterLessThan<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterLessThan<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -120,7 +121,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using greater than or equal operator
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterGreaterThanOrEqual<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterGreaterThanOrEqual<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -131,7 +132,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using less than or equal operator
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterLessThanOrEqual<TProp>(Expression<Func<T, TProp>> property, TProp value)
+    public SievePlusQueryBuilder<TQueryModel> FilterLessThanOrEqual<TProp>(Expression<Func<TQueryModel, TProp>> property, TProp value)
     {
         var propertyName = GetPropertyName(property);
         var formattedValue = FormatValue(value);
@@ -142,7 +143,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add a filter using a custom property name (for mapped properties like BooksCount)
     /// </summary>
-    public SievePlusQueryBuilder<T> FilterByName(string propertyName, string operatorSymbol, object value)
+    public SievePlusQueryBuilder<TQueryModel> FilterByName(string propertyName, string operatorSymbol, object value)
     {
         var formattedValue = FormatValue(value);
         AddFilter($"{propertyName}{operatorSymbol}{formattedValue}");
@@ -152,7 +153,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add ascending sort for a property
     /// </summary>
-    public SievePlusQueryBuilder<T> SortBy<TProp>(Expression<Func<T, TProp>> property)
+    public SievePlusQueryBuilder<TQueryModel> SortBy<TProp>(Expression<Func<TQueryModel, TProp>> property)
     {
         var propertyName = GetPropertyName(property);
         _sorts.Add(propertyName);
@@ -162,7 +163,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add descending sort for a property
     /// </summary>
-    public SievePlusQueryBuilder<T> SortByDescending<TProp>(Expression<Func<T, TProp>> property)
+    public SievePlusQueryBuilder<TQueryModel> SortByDescending<TProp>(Expression<Func<TQueryModel, TProp>> property)
     {
         var propertyName = GetPropertyName(property);
         _sorts.Add($"-{propertyName}");
@@ -172,7 +173,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Add sort using a custom property name (for mapped properties like BooksCount)
     /// </summary>
-    public SievePlusQueryBuilder<T> SortByName(string propertyName, bool descending = false)
+    public SievePlusQueryBuilder<TQueryModel> SortByName(string propertyName, bool descending = false)
     {
         _sorts.Add(descending ? $"-{propertyName}" : propertyName);
         return this;
@@ -181,7 +182,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Set the page number for pagination
     /// </summary>
-    public SievePlusQueryBuilder<T> Page(int page)
+    public SievePlusQueryBuilder<TQueryModel> Page(int page)
     {
         _page = page;
         return this;
@@ -190,7 +191,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Set the page size for pagination
     /// </summary>
-    public SievePlusQueryBuilder<T> PageSize(int pageSize)
+    public SievePlusQueryBuilder<TQueryModel> PageSize(int pageSize)
     {
         _pageSize = pageSize;
         return this;
@@ -231,11 +232,11 @@ public class SievePlusQueryBuilder<T> where T : class
     }
 
     /// <summary>
-    /// Build a complete SievePlusModel object
+    /// Build a complete SievePlusModel object with type information
     /// </summary>
-    public SievePlusModel BuildSieveModel()
+    public SievePlusModel<TQueryModel> BuildSieveModel()
     {
-        return new SievePlusModel
+        return new SievePlusModel<TQueryModel>
         {
             Filters = BuildFiltersString(),
             Sorts = BuildSortsString(),
@@ -297,7 +298,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Extract property name from expression, handling nested properties
     /// </summary>
-    private static string GetPropertyName<TProp>(Expression<Func<T, TProp>> property)
+    private static string GetPropertyName<TProp>(Expression<Func<TQueryModel, TProp>> property)
     {
         if (property.Body is MemberExpression memberExpression)
         {
@@ -317,9 +318,9 @@ public class SievePlusQueryBuilder<T> where T : class
     /// Parse a query string into a SieveQueryBuilder instance
     /// </summary>
     /// <param name="queryString">The query string to parse (e.g., filters with Name contains Bob, sorts with descending CreatedAt, page and pageSize)</param>
-    public static SievePlusQueryBuilder<T> ParseQueryString(string queryString)
+    public static SievePlusQueryBuilder<TQueryModel> ParseQueryString(string queryString)
     {
-        var builder = new SievePlusQueryBuilder<T>();
+        var builder = new SievePlusQueryBuilder<TQueryModel>();
 
         if (string.IsNullOrWhiteSpace(queryString))
             return builder;
@@ -362,9 +363,9 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Create a builder from an existing SievePlusModel
     /// </summary>
-    public static SievePlusQueryBuilder<T> FromSieveModel(SievePlusModel plusModel)
+    public static SievePlusQueryBuilder<TQueryModel> FromSieveModel(SievePlusModel plusModel)
     {
-        var builder = new SievePlusQueryBuilder<T>();
+        var builder = new SievePlusQueryBuilder<TQueryModel>();
 
         if (!string.IsNullOrWhiteSpace(plusModel.Filters))
         {
@@ -466,7 +467,7 @@ public class SievePlusQueryBuilder<T> where T : class
         return _sorts.Any(s => s == propertyName || s == $"-{propertyName}");
     }
 
-    private static void ParseFiltersIntoGroups(string filtersString, SievePlusQueryBuilder<T> builder)
+    private static void ParseFiltersIntoGroups(string filtersString, SievePlusQueryBuilder<TQueryModel> builder)
     {
         if (string.IsNullOrWhiteSpace(filtersString))
             return;
@@ -576,7 +577,7 @@ public class SievePlusQueryBuilder<T> where T : class
     ///        .FilterGreaterThan(c => c.Price, 1000)
     /// // Produces: (Processor==Intel || Processor==AMD),Price&gt;1000
     /// </example>
-    public SievePlusQueryBuilder<T> BeginGroup()
+    public SievePlusQueryBuilder<TQueryModel> BeginGroup()
     {
         // Push current segment onto stack
         _segmentStack.Push(_currentSegment);
@@ -591,7 +592,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// End a grouped sub-expression
     /// Must be paired with BeginGroup()
     /// </summary>
-    public SievePlusQueryBuilder<T> EndGroup()
+    public SievePlusQueryBuilder<TQueryModel> EndGroup()
     {
         if (_segmentStack.Count == 0)
         {
@@ -631,7 +632,7 @@ public class SievePlusQueryBuilder<T> where T : class
     ///            .FilterLessThan(c => c.Price, 2000))
     /// // Produces: (Processor==Intel || Processor==AMD),Price&gt;1000,Price&lt;2000
     /// </example>
-    public SievePlusQueryBuilder<T> WithSharedConstraints(Action<SievePlusQueryBuilder<T>> constraintsBuilder)
+    public SievePlusQueryBuilder<TQueryModel> WithSharedConstraints(Action<SievePlusQueryBuilder<TQueryModel>> constraintsBuilder)
     {
         constraintsBuilder(this);
         return this;
@@ -648,10 +649,10 @@ public class SievePlusQueryBuilder<T> where T : class
     ///     b => b.FilterGreaterThan(c => c.Price, 1000))
     /// // Produces: (Processor==Intel i9 || Processor==AMD Ryzen 9),Price&gt;1000
     /// </example>
-    public SievePlusQueryBuilder<T> FilterWithAlternatives<TProp>(
-        Expression<Func<T, TProp>> property,
+    public SievePlusQueryBuilder<TQueryModel> FilterWithAlternatives<TProp>(
+        Expression<Func<TQueryModel, TProp>> property,
         TProp[] alternatives,
-        Action<SievePlusQueryBuilder<T>>? sharedConstraints = null)
+        Action<SievePlusQueryBuilder<TQueryModel>>? sharedConstraints = null)
     {
         if (alternatives == null || alternatives.Length == 0)
         {
@@ -683,7 +684,7 @@ public class SievePlusQueryBuilder<T> where T : class
     /// <summary>
     /// Create a new builder instance for fluent API
     /// </summary>
-    public static SievePlusQueryBuilder<T> Create() => new();
+    public static SievePlusQueryBuilder<TQueryModel> Create() => new();
 }
 
 /// <summary>
