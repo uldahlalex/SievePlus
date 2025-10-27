@@ -12,10 +12,8 @@ public class ComputerStoreService(MyDbContext ctx, SievePlusProcessor sievePlusP
     {
         IQueryable<Computer> query = ctx.Computers;
 
-        // Apply Sieve.Plus FIRST (filtering, sorting, pagination) with explicit query model
-        query = sievePlusProcessor.Apply<Computer, ComputerQueryModel>(sievePlusModel, query);
+        query = sievePlusProcessor.Apply<Computer>(sievePlusModel, query);
 
-        // Then include related data - but DON'T nest further to avoid cycles
         return query
             .AsSplitQuery()
             .ToListAsync();

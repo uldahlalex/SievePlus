@@ -17,11 +17,11 @@ export class ComputerStoreClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getComputers(model: SievePlusModel): Promise<Computer[]> {
+    getComputers(request: SievePlusRequestOfComputerQueryModel): Promise<Computer[]> {
         let url_ = this.baseUrl + "/api/ComputerStore/GetComputers";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -54,11 +54,11 @@ export class ComputerStoreClient {
         return Promise.resolve<Computer[]>(null as any);
     }
 
-    getBrands(model: SievePlusModel): Promise<Brand[]> {
+    getBrands(request: SievePlusRequestOfBrandQueryModel): Promise<Brand[]> {
         let url_ = this.baseUrl + "/api/ComputerStore/GetBrands";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -91,11 +91,11 @@ export class ComputerStoreClient {
         return Promise.resolve<Brand[]>(null as any);
     }
 
-    getCategories(model: SievePlusModel): Promise<Category[]> {
+    getCategories(request: SievePlusRequestOfCategoryQueryModel): Promise<Category[]> {
         let url_ = this.baseUrl + "/api/ComputerStore/GetCategories";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -162,14 +162,21 @@ export interface Category {
     computers: Computer[];
 }
 
-export interface SievePlusModelOfFilterTermAndSortTerm {
-    filters: string;
-    sorts: string;
+/** Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation. Use this in controller methods to expose the available query properties to API clients. */
+export interface SievePlusRequestOfComputerQueryModel {
+    /** Filter string (e.g., "price>=1000,inStock==true")
+Properties available for filtering are defined in . */
+    filters: string | undefined;
+    /** Sort string (e.g., "price,-rating")
+Properties available for sorting are defined in . */
+    sorts: string | undefined;
+    /** Page number (1-based) */
     page: number | undefined;
+    /** Page size */
     pageSize: number | undefined;
-}
-
-export interface SievePlusModel extends SievePlusModelOfFilterTermAndSortTerm {
+    /** The query model that defines all available properties for filtering and sorting.
+This property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger. */
+    queryModel: ComputerQueryModel | undefined;
 }
 
 export interface ComputerQueryModel {
@@ -191,11 +198,45 @@ export interface ComputerQueryModel {
     isHighPerformance: boolean | undefined;
 }
 
+/** Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation. Use this in controller methods to expose the available query properties to API clients. */
+export interface SievePlusRequestOfBrandQueryModel {
+    /** Filter string (e.g., "price>=1000,inStock==true")
+Properties available for filtering are defined in . */
+    filters: string | undefined;
+    /** Sort string (e.g., "price,-rating")
+Properties available for sorting are defined in . */
+    sorts: string | undefined;
+    /** Page number (1-based) */
+    page: number | undefined;
+    /** Page size */
+    pageSize: number | undefined;
+    /** The query model that defines all available properties for filtering and sorting.
+This property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger. */
+    queryModel: BrandQueryModel | undefined;
+}
+
 export interface BrandQueryModel {
     id: string;
     name: string;
     createdAt: string;
     computerCount: number;
+}
+
+/** Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation. Use this in controller methods to expose the available query properties to API clients. */
+export interface SievePlusRequestOfCategoryQueryModel {
+    /** Filter string (e.g., "price>=1000,inStock==true")
+Properties available for filtering are defined in . */
+    filters: string | undefined;
+    /** Sort string (e.g., "price,-rating")
+Properties available for sorting are defined in . */
+    sorts: string | undefined;
+    /** Page number (1-based) */
+    page: number | undefined;
+    /** Page size */
+    pageSize: number | undefined;
+    /** The query model that defines all available properties for filtering and sorting.
+This property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger. */
+    queryModel: CategoryQueryModel | undefined;
 }
 
 export interface CategoryQueryModel {

@@ -1,3 +1,4 @@
+using api.DTOs.QueryModels;
 using api.Services;
 using dataccess;
 using Microsoft.AspNetCore.Mvc;
@@ -10,20 +11,20 @@ namespace api;
 public class ComputerStoreController(IComputerStoreService computerStoreService) : ControllerBase
 {
     [HttpPost(nameof(GetComputers))]
-    public async Task<List<Computer>> GetComputers([FromBody] SievePlusModel model)
+    public async Task<List<Computer>> GetComputers([FromBody] SievePlusRequest<ComputerQueryModel> request)
     {
-        return await computerStoreService.GetComputers(model);
+        return await computerStoreService.GetComputers(request);
     }
 
     [HttpPost(nameof(GetBrands))]
-    public async Task<List<Brand>> GetBrands([FromBody] SievePlusModel model)
+    public async Task<List<Brand>> GetBrands([FromBody] SievePlusRequest<BrandQueryModel> request)
     {
-        return await computerStoreService.GetBrands(model);
+        return await computerStoreService.GetBrands(request);
     }
 
     [HttpPost(nameof(GetCategories))]
-    public async Task<List<Category>> GetCategories([FromBody] SievePlusModel model)
+    public async Task<List<Category>> GetCategories([FromBody] SievePlusRequest<CategoryQueryModel> request)
     {
-        return await computerStoreService.GetCategories(model);
+        return await computerStoreService.GetCategories(request);
     }
 }

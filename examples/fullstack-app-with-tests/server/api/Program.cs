@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using api.DTOs.QueryModels;
 using api.Services;
 using dataccess;
 using Microsoft.EntityFrameworkCore;
-using NSwag.Generation.Processors.Collections;
 using Sieve.Plus.Models;
 using Sieve.Plus.Services;
 using Testcontainers.PostgreSql;
@@ -46,13 +44,7 @@ public class Program
             opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
             opts.JsonSerializerOptions.MaxDepth = 128;
         });
-        services.AddOpenApiDocument(config =>
-        {
-            // Add query models to Swagger for TypeScript generation
-            config.AddTypeToSwagger<ComputerQueryModel>();
-            config.AddTypeToSwagger<BrandQueryModel>();
-            config.AddTypeToSwagger<CategoryQueryModel>();
-        });
+        services.AddOpenApiDocument();
         services.AddCors();
         services.AddScoped<ISeeder, ComputerStoreSeeder>();
         services.AddExceptionHandler<MyGlobalExceptionHandler>();

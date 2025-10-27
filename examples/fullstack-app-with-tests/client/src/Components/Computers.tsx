@@ -25,7 +25,7 @@ export default function Computers() {
   const fetchComputers = async () => {
     setLoading(true);
     try {
-      const builder = SieveQueryBuilder.create<ComputerQueryModel>()
+      const builder = SieveQueryBuilder.create<Computer>()
         .page(1)
         .pageSize(50);
 

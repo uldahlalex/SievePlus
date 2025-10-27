@@ -13,11 +13,11 @@
         ],
         "operationId": "ComputerStore_GetComputers",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SievePlusModel"
+                "$ref": "#/components/schemas/SievePlusRequestOfComputerQueryModel"
               }
             }
           },
@@ -48,11 +48,11 @@
         ],
         "operationId": "ComputerStore_GetBrands",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SievePlusModel"
+                "$ref": "#/components/schemas/SievePlusRequestOfBrandQueryModel"
               }
             }
           },
@@ -83,11 +83,11 @@
         ],
         "operationId": "ComputerStore_GetCategories",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SievePlusModel"
+                "$ref": "#/components/schemas/SievePlusRequestOfCategoryQueryModel"
               }
             }
           },
@@ -231,29 +231,25 @@
           }
         }
       },
-      "SievePlusModel": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SievePlusModelOfFilterTermAndSortTerm"
-          },
-          {
-            "type": "object",
-            "additionalProperties": false
-          }
-        ]
-      },
-      "SievePlusModelOfFilterTermAndSortTerm": {
+      "SievePlusRequestOfComputerQueryModel": {
         "type": "object",
+        "description": "Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation.\nUse this in controller methods to expose the available query properties to API clients.",
+        "example": "[HttpGet]\npublic async Task<List<Computer>> GetComputers([FromQuery] SievePlusRequest<ComputerQueryModel> request)\n{\n    return await service.GetComputers(request);\n}",
         "additionalProperties": false,
         "properties": {
           "filters": {
-            "type": "string"
+            "type": "string",
+            "description": "Filter string (e.g., \"price>=1000,inStock==true\")\nProperties available for filtering are defined in .",
+            "nullable": true
           },
           "sorts": {
-            "type": "string"
+            "type": "string",
+            "description": "Sort string (e.g., \"price,-rating\")\nProperties available for sorting are defined in .",
+            "nullable": true
           },
           "page": {
             "type": "integer",
+            "description": "Page number (1-based)",
             "format": "int32",
             "maximum": 2147483647.0,
             "minimum": 1.0,
@@ -261,15 +257,24 @@
           },
           "pageSize": {
             "type": "integer",
+            "description": "Page size",
             "format": "int32",
             "maximum": 2147483647.0,
             "minimum": 1.0,
             "nullable": true
+          },
+          "queryModel": {
+            "description": "The query model that defines all available properties for filtering and sorting.\nThis property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger.",
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ComputerQueryModel"
+              }
+            ]
           }
         }
       },
       "ComputerQueryModel": {
-        "title": "ComputerQueryModel",
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -332,8 +337,50 @@
           }
         }
       },
+      "SievePlusRequestOfBrandQueryModel": {
+        "type": "object",
+        "description": "Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation.\nUse this in controller methods to expose the available query properties to API clients.",
+        "example": "[HttpGet]\npublic async Task<List<Computer>> GetComputers([FromQuery] SievePlusRequest<ComputerQueryModel> request)\n{\n    return await service.GetComputers(request);\n}",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "string",
+            "description": "Filter string (e.g., \"price>=1000,inStock==true\")\nProperties available for filtering are defined in .",
+            "nullable": true
+          },
+          "sorts": {
+            "type": "string",
+            "description": "Sort string (e.g., \"price,-rating\")\nProperties available for sorting are defined in .",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Page number (1-based)",
+            "format": "int32",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "nullable": true
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Page size",
+            "format": "int32",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "nullable": true
+          },
+          "queryModel": {
+            "description": "The query model that defines all available properties for filtering and sorting.\nThis property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger.",
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BrandQueryModel"
+              }
+            ]
+          }
+        }
+      },
       "BrandQueryModel": {
-        "title": "BrandQueryModel",
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -353,8 +400,50 @@
           }
         }
       },
+      "SievePlusRequestOfCategoryQueryModel": {
+        "type": "object",
+        "description": "Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation.\nUse this in controller methods to expose the available query properties to API clients.",
+        "example": "[HttpGet]\npublic async Task<List<Computer>> GetComputers([FromQuery] SievePlusRequest<ComputerQueryModel> request)\n{\n    return await service.GetComputers(request);\n}",
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "type": "string",
+            "description": "Filter string (e.g., \"price>=1000,inStock==true\")\nProperties available for filtering are defined in .",
+            "nullable": true
+          },
+          "sorts": {
+            "type": "string",
+            "description": "Sort string (e.g., \"price,-rating\")\nProperties available for sorting are defined in .",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "description": "Page number (1-based)",
+            "format": "int32",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "nullable": true
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Page size",
+            "format": "int32",
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "nullable": true
+          },
+          "queryModel": {
+            "description": "The query model that defines all available properties for filtering and sorting.\nThis property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger.",
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CategoryQueryModel"
+              }
+            ]
+          }
+        }
+      },
       "CategoryQueryModel": {
-        "title": "CategoryQueryModel",
         "type": "object",
         "additionalProperties": false,
         "properties": {
