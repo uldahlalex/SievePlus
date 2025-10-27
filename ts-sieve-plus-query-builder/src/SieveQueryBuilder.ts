@@ -1,17 +1,20 @@
 /**
- * Type-safe Sieve query string builder for TypeScript
+ * Type-safe SievePlus query string builder for TypeScript
  *
- * Supports building filter, sort, and pagination parameters for Sieve-compatible APIs
+ * Supports building filter, sort, and pagination parameters for SievePlus-compatible APIs
  */
 
 /**
- * Represents the Sieve model structure
+ * Represents the SievePlus model structure with query model type
+ * @template TQueryModel The query model type that defines available filter and sort properties
  */
-export interface SieveModel {
+export interface SievePlusModel<TQueryModel = any> {
   filters: string;
   sorts: string;
   page: number;
   pageSize: number;
+  /** Query model type for OpenAPI/TypeScript type safety - always undefined at runtime */
+  queryModel: TQueryModel | undefined;
 }
 
 /**
@@ -41,8 +44,8 @@ type PropertyKeys<T> = {
 }[keyof T];
 
 /**
- * Type-safe Sieve query builder
- * @template T The entity type to build queries for
+ * Type-safe SievePlus query builder
+ * @template T The query model type to build queries for
  */
 /**
  * Represents a segment in the filter expression tree
@@ -72,7 +75,7 @@ class FilterSegment {
   }
 }
 
-export class SieveQueryBuilder<T extends object> {
+export class SievePlusQueryBuilder<T extends object> {
   private filters: string[] = [];
   private filterGroups: string[][] = [[]]; // Support for OR groups (backward compat)
   private currentGroupIndex: number = 0;
@@ -85,18 +88,18 @@ export class SieveQueryBuilder<T extends object> {
   private currentSegment: FilterSegment = new FilterSegment();
 
   /**
-   * Create a new SieveQueryBuilder instance
+   * Create a new SievePlusQueryBuilder instance
    */
-  static create<T extends object>(): SieveQueryBuilder<T> {
-    return new SieveQueryBuilder<T>();
+  static create<T extends object>(): SievePlusQueryBuilder<T> {
+    return new SievePlusQueryBuilder<T>();
   }
 
   /**
-   * Parse a SieveModel object into a SieveQueryBuilder instance
-   * @param model The SieveModel object with filters, sorts, page, and pageSize
+   * Parse a SievePlusModel object into a SievePlusQueryBuilder instance
+   * @param model The SievePlusModel object with filters, sorts, page, and pageSize
    */
-  static fromSieveModel<T extends object>(model: SieveModel): SieveQueryBuilder<T> {
-    const builder = new SieveQueryBuilder<T>();
+  static fromSievePlusModel<T extends object>(model: SievePlusModel<T>): SievePlusQueryBuilder<T> {
+    const builder = new SievePlusQueryBuilder<T>();
 
     if (model.filters) {
       // Parse filters into groups (handles OR with " || " separator)
@@ -119,11 +122,11 @@ export class SieveQueryBuilder<T extends object> {
   }
 
   /**
-   * Parse a query string into a SieveQueryBuilder instance
+   * Parse a query string into a SievePlusQueryBuilder instance
    * @param queryString The query string to parse (e.g., "filters=name@=Bob&sorts=-createdat&page=1&pageSize=10")
    */
-  static parseQueryString<T extends object>(queryString: string): SieveQueryBuilder<T> {
-    const builder = new SieveQueryBuilder<T>();
+  static parseQueryString<T extends object>(queryString: string): SievePlusQueryBuilder<T> {
+    const builder = new SievePlusQueryBuilder<T>();
 
     if (!queryString || queryString.trim() === '') {
       return builder;
@@ -196,7 +199,7 @@ export class SieveQueryBuilder<T extends object> {
    */
   private static parseFiltersIntoGroups<T extends object>(
     filtersString: string,
-    builder: SieveQueryBuilder<T>
+    builder: SievePlusQueryBuilder<T>
   ): void {
     if (!filtersString || filtersString.trim() === '') {
       return;
@@ -323,7 +326,7 @@ export class SieveQueryBuilder<T extends object> {
   filterWithAlternatives<K extends PropertyKeys<T>>(
     property: K,
     alternatives: (T[K] | string | number | boolean)[],
-    sharedConstraints?: (builder: SieveQueryBuilder<T>) => void
+    sharedConstraints?: (builder: SievePlusQueryBuilder<T>) => void
   ): this {
     if (!alternatives || alternatives.length === 0) {
       return this;
@@ -640,14 +643,16 @@ export class SieveQueryBuilder<T extends object> {
   }
 
   /**
-   * Build a complete SieveModel object
+   * Build a complete SievePlusModel object with the query model type
+   * The queryModel property is always undefined - it only exists for TypeScript type checking
    */
-  buildSieveModel(): SieveModel {
+  buildSievePlusModel(): SievePlusModel<T> {
     return {
       filters: this.buildFiltersString(),
       sorts: this.buildSortsString(),
       page: this.pageValue ?? 1,
-      pageSize: this.pageSizeValue ?? 10
+      pageSize: this.pageSizeValue ?? 10,
+      queryModel: undefined
     };
   }
 
@@ -742,7 +747,7 @@ export class SieveQueryBuilder<T extends object> {
 
     for (const group of this.filterGroups) {
       for (const filter of group) {
-        const filterInfo = SieveQueryBuilder.parseFilterString(filter);
+        const filterInfo = SievePlusQueryBuilder.parseFilterString(filter);
         filterInfos.push(filterInfo);
       }
     }
@@ -758,7 +763,7 @@ export class SieveQueryBuilder<T extends object> {
 
     for (const group of this.filterGroups) {
       const filterInfos = group.map(filter =>
-        SieveQueryBuilder.parseFilterString(filter)
+        SievePlusQueryBuilder.parseFilterString(filter)
       );
       groups.push(filterInfos);
     }

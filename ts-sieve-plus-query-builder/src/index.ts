@@ -1,1 +1,1 @@
-export { SieveQueryBuilder, type SieveModel } from './SieveQueryBuilder';
+export { SievePlusQueryBuilder, type SievePlusModel } from './SieveQueryBuilder';

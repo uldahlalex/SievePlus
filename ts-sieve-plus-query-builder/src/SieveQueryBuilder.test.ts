@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SieveQueryBuilder } from './SieveQueryBuilder';
+import { SievePlusQueryBuilder } from './SieveQueryBuilder';
 
 // Sample interfaces matching your C# entities
 interface Author {
@@ -17,10 +17,10 @@ interface Book {
   authors: Author[];
 }
 
-describe('SieveQueryBuilder', () => {
+describe('SievePlusQueryBuilder', () => {
   describe('Filter operations', () => {
     it('should build equals filter', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterEquals('name', 'Bob_5')
         .buildFiltersString();
 
@@ -28,7 +28,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build contains filter', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', '_5')
         .buildFiltersString();
 
@@ -36,7 +36,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build not equals filter', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterNotEquals('name', 'Bob_0')
         .buildFiltersString();
 
@@ -44,7 +44,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build starts with filter', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterStartsWith('name', 'Bob')
         .buildFiltersString();
 
@@ -52,7 +52,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build greater than filter', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterGreaterThan('pages', 200)
         .buildFiltersString();
 
@@ -60,7 +60,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build less than filter', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterLessThan('pages', 500)
         .buildFiltersString();
 
@@ -68,7 +68,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build greater than or equal filter', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterGreaterThanOrEqual('pages', 200)
         .buildFiltersString();
 
@@ -76,7 +76,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build less than or equal filter', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterLessThanOrEqual('pages', 500)
         .buildFiltersString();
 
@@ -84,7 +84,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should combine multiple filters', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterNotEquals('name', 'Bob_0')
         .buildFiltersString();
@@ -93,7 +93,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build custom property filter', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterByName('BooksCount', '>=', 5)
         .buildFiltersString();
 
@@ -102,7 +102,7 @@ describe('SieveQueryBuilder', () => {
 
     it('should handle Date filters', () => {
       const date = new Date('2024-01-01T00:00:00Z');
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterGreaterThanOrEqual('createdat', date)
         .buildFiltersString();
 
@@ -112,7 +112,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Sort operations', () => {
     it('should build ascending sort', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .sortBy('name')
         .buildSortsString();
 
@@ -120,7 +120,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build descending sort', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .sortByDescending('name')
         .buildSortsString();
 
@@ -128,7 +128,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should combine multiple sorts', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .sortByDescending('createdat')
         .sortBy('name')
         .buildSortsString();
@@ -137,7 +137,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build custom property sort', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .sortByName('BooksCount', true)
         .buildSortsString();
 
@@ -147,17 +147,17 @@ describe('SieveQueryBuilder', () => {
 
   describe('Pagination', () => {
     it('should set page number', () => {
-      const model = SieveQueryBuilder.create<Author>()
+      const model = SievePlusQueryBuilder.create<Author>()
         .page(2)
-        .buildSieveModel();
+        .buildSievePlusModel();
 
       expect(model.page).toBe(2);
     });
 
     it('should set page size', () => {
-      const model = SieveQueryBuilder.create<Author>()
+      const model = SievePlusQueryBuilder.create<Author>()
         .pageSize(10)
-        .buildSieveModel();
+        .buildSievePlusModel();
 
       expect(model.pageSize).toBe(10);
     });
@@ -165,12 +165,12 @@ describe('SieveQueryBuilder', () => {
 
   describe('SieveModel building', () => {
     it('should build complete SieveModel', () => {
-      const model = SieveQueryBuilder.create<Author>()
+      const model = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .sortBy('name')
         .page(2)
         .pageSize(10)
-        .buildSieveModel();
+        .buildSievePlusModel();
 
       expect(model).toEqual({
         filters: 'name@=Bob',
@@ -181,9 +181,9 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should only include non-empty values in SieveModel', () => {
-      const model = SieveQueryBuilder.create<Author>()
+      const model = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
-        .buildSieveModel();
+        .buildSievePlusModel();
 
       expect(model).toEqual({
         filters: 'name@=Bob',
@@ -196,7 +196,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Query string building', () => {
     it('should build complete query string', () => {
-      const queryString = SieveQueryBuilder.create<Author>()
+      const queryString = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterNotEquals('name', 'Bob_0')
         .sortBy('name')
@@ -210,7 +210,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should handle empty query string', () => {
-      const queryString = SieveQueryBuilder.create<Author>().buildQueryString();
+      const queryString = SievePlusQueryBuilder.create<Author>().buildQueryString();
 
       expect(queryString).toBe('');
     });
@@ -218,7 +218,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Query params building', () => {
     it('should build query params object', () => {
-      const params = SieveQueryBuilder.create<Author>()
+      const params = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .sortBy('name')
         .page(1)
@@ -234,7 +234,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should return empty object when no params', () => {
-      const params = SieveQueryBuilder.create<Author>().buildQueryParams();
+      const params = SievePlusQueryBuilder.create<Author>().buildQueryParams();
 
       expect(params).toEqual({});
     });
@@ -242,7 +242,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Fluent API chaining', () => {
     it('should support method chaining', () => {
-      const query = SieveQueryBuilder.create<Author>()
+      const query = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
         .filterByName('BooksCount', '>=', 3)
@@ -251,7 +251,7 @@ describe('SieveQueryBuilder', () => {
         .page(1)
         .pageSize(20);
 
-      const model = query.buildSieveModel();
+      const model = query.buildSievePlusModel();
 
       expect(model.filters).toContain('name@=Bob');
       expect(model.filters).toContain('createdat>=');
@@ -264,7 +264,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Type safety', () => {
     it('should only allow valid property names', () => {
-      const builder = SieveQueryBuilder.create<Author>();
+      const builder = SievePlusQueryBuilder.create<Author>();
 
       // These should compile without errors
       builder.filterEquals('name', 'test');
@@ -278,7 +278,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Real-world usage examples', () => {
     it('should build query for filtering authors by name contains', () => {
-      const queryString = SieveQueryBuilder.create<Author>()
+      const queryString = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob_0')
         .pageSize(10)
         .buildQueryString();
@@ -290,7 +290,7 @@ describe('SieveQueryBuilder', () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const model = SieveQueryBuilder.create<Author>()
+      const model = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterGreaterThanOrEqual('createdat', thirtyDaysAgo)
         .filterByName('BooksCount', '>=', 3)
@@ -298,7 +298,7 @@ describe('SieveQueryBuilder', () => {
         .sortBy('name')
         .page(1)
         .pageSize(20)
-        .buildSieveModel();
+        .buildSievePlusModel();
 
       expect(model.filters).toBeDefined();
       expect(model.filters).toContain('name@=Bob');
@@ -309,7 +309,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should build query for books with page count filtering', () => {
-      const params = SieveQueryBuilder.create<Book>()
+      const params = SievePlusQueryBuilder.create<Book>()
         .filterGreaterThan('pages', 200)
         .filterLessThan('pages', 500)
         .sortBy('title')
@@ -329,8 +329,8 @@ describe('SieveQueryBuilder', () => {
         pageSize: 10
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob,id==123');
       expect(result.page).toBe(1);
@@ -345,8 +345,8 @@ describe('SieveQueryBuilder', () => {
         pageSize: 20
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const result = builder.buildSievePlusModel();
 
       expect(result.sorts).toBe('-createdat,name');
       expect(result.page).toBe(1);
@@ -361,8 +361,8 @@ describe('SieveQueryBuilder', () => {
         pageSize: 25
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const result = builder.buildSievePlusModel();
 
       expect(result.page).toBe(5);
       expect(result.pageSize).toBe(25);
@@ -378,8 +378,8 @@ describe('SieveQueryBuilder', () => {
         pageSize: 10
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('');
       expect(result.sorts).toBe('');
@@ -395,12 +395,12 @@ describe('SieveQueryBuilder', () => {
         pageSize: 10
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model)
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model)
         .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
         .sortByDescending('createdat')
         .page(2);
 
-      const result = builder.buildSieveModel();
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toContain('name@=Bob');
       expect(result.filters).toContain('createdat>=');
@@ -417,14 +417,14 @@ describe('SieveQueryBuilder', () => {
       const pageSize = 3;
       const page = 1;
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>({
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>({
         pageSize: pageSize,
         page: page,
         sorts: sorts,
         filters: filters
       });
 
-      const result = builder.buildSieveModel();
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob,id!=123');
       expect(result.sorts).toBe('-createdat,name');
@@ -440,8 +440,8 @@ describe('SieveQueryBuilder', () => {
         pageSize: 10
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('');
       expect(result.sorts).toBe('');
@@ -457,8 +457,8 @@ describe('SieveQueryBuilder', () => {
         pageSize: 10
       };
 
-      const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob');
       expect(result.sorts).toBe('');
@@ -467,7 +467,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should support round-trip parsing', () => {
-      const original = SieveQueryBuilder.create<Author>()
+      const original = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterNotEquals('id', '123')
         .sortByDescending('createdat')
@@ -475,9 +475,9 @@ describe('SieveQueryBuilder', () => {
         .page(2)
         .pageSize(15);
 
-      const model = original.buildSieveModel();
-      const parsed = SieveQueryBuilder.fromSieveModel<Author>(model);
-      const rebuilt = parsed.buildSieveModel();
+      const model = original.buildSievePlusModel();
+      const parsed = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
+      const rebuilt = parsed.buildSievePlusModel();
 
       expect(rebuilt).toEqual(model);
     });
@@ -485,7 +485,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Remove filters', () => {
     it('should remove filters for a specific property', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterEquals('name', 'Alice')
         .filterEquals('id', '123');
@@ -497,7 +497,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should remove filters by name for mapped properties', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterByName('BooksCount', '>=', 5)
         .filterByName('BooksCount', '<=', 10)
         .filterEquals('name', 'Bob');
@@ -509,7 +509,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should handle removing non-existent filters', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterEquals('name', 'Bob');
 
       builder.removeFilters('id');
@@ -521,7 +521,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Replace filter functionality', () => {
     it('should replace filter when replace=true on filterContains', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterContains('name', 'Alice', true);
 
@@ -530,7 +530,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should append filter when replace=false (default)', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterContains('name', 'Alice');
 
@@ -539,7 +539,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should replace multiple existing filters for same property', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterEquals('name', 'Alice')
         .filterStartsWith('name', 'Charlie')
@@ -550,7 +550,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should only replace filters for the specified property', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterEquals('id', '123')
         .filterContains('name', 'Alice', true);
@@ -560,7 +560,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should work with filterEquals replace', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterEquals('id', '123')
         .filterEquals('id', '456', true);
 
@@ -569,7 +569,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should work with filterByName replace', () => {
-      const builder = SieveQueryBuilder.create<Author>()
+      const builder = SievePlusQueryBuilder.create<Author>()
         .filterByName('BooksCount', '>=', 5)
         .filterByName('BooksCount', '<=', 10)
         .filterByName('BooksCount', '==', 7, true);
@@ -580,7 +580,7 @@ describe('SieveQueryBuilder', () => {
 
     it('should handle real-world scenario with input changes', () => {
       // Simulating multiple button clicks that should replace the filter
-      const builder = SieveQueryBuilder.create<Book>();
+      const builder = SievePlusQueryBuilder.create<Book>();
 
       // User types "a"
       builder.filterContains('title', 'a', true);
@@ -600,7 +600,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should preserve other filters when replacing', () => {
-      const builder = SieveQueryBuilder.create<Book>()
+      const builder = SievePlusQueryBuilder.create<Book>()
         .filterGreaterThan('pages', 100)
         .filterContains('title', 'a')
         .filterContains('title', 'book', true)
@@ -616,7 +616,7 @@ describe('SieveQueryBuilder', () => {
 
   describe('Parentheses grouping', () => {
     it('should generate parentheses with beginGroup/endGroup', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .beginGroup()
           .filterEquals('title', 'Book A')
           .or()
@@ -629,7 +629,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should generate parentheses with filterWithAlternatives', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterWithAlternatives(
           'title',
           ['Book A', 'Book B', 'Book C'],
@@ -641,7 +641,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should handle filterWithAlternatives without shared constraints', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterWithAlternatives('title', ['Book A', 'Book B'])
         .buildFiltersString();
 
@@ -649,7 +649,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should support simple or() method', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterEquals('title', 'Book A')
         .or()
         .filterEquals('title', 'Book B')
@@ -659,7 +659,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should maintain backward compatibility - no parentheses without groups', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .filterEquals('title', 'Book A')
         .filterGreaterThan('pages', 100)
         .buildFiltersString();
@@ -668,7 +668,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should throw error on unmatched beginGroup', () => {
-      const builder = SieveQueryBuilder.create<Book>()
+      const builder = SievePlusQueryBuilder.create<Book>()
         .beginGroup()
           .filterEquals('title', 'Book A');
 
@@ -676,13 +676,13 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should throw error on unmatched endGroup', () => {
-      const builder = SieveQueryBuilder.create<Book>();
+      const builder = SievePlusQueryBuilder.create<Book>();
 
       expect(() => builder.endGroup()).toThrow('endGroup() called without matching beginGroup()');
     });
 
     it('should handle nested groups', () => {
-      const query = SieveQueryBuilder.create<Book>()
+      const query = SievePlusQueryBuilder.create<Book>()
         .beginGroup()
           .beginGroup()
             .filterEquals('title', 'A')
@@ -704,7 +704,7 @@ describe('SieveQueryBuilder', () => {
         screenSize: number;
       }
 
-      const query = SieveQueryBuilder.create<Computer>()
+      const query = SievePlusQueryBuilder.create<Computer>()
         .beginGroup()
           .filterEquals('processor', 'Intel i9')
           .or()
@@ -724,8 +724,8 @@ describe('SieveQueryBuilder', () => {
     it('should parse filters from query string', () => {
       const queryString = 'filters=name@=Bob,id==123&page=1&pageSize=10';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob,id==123');
       expect(result.page).toBe(1);
@@ -735,8 +735,8 @@ describe('SieveQueryBuilder', () => {
     it('should parse sorts from query string', () => {
       const queryString = 'sorts=-createdat,name&page=1&pageSize=20';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.sorts).toBe('-createdat,name');
       expect(result.page).toBe(1);
@@ -746,8 +746,8 @@ describe('SieveQueryBuilder', () => {
     it('should parse pagination from query string', () => {
       const queryString = 'page=5&pageSize=25';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.page).toBe(5);
       expect(result.pageSize).toBe(25);
@@ -758,8 +758,8 @@ describe('SieveQueryBuilder', () => {
     it('should handle URL-encoded query string', () => {
       const queryString = 'filters=name%40%3DBob%2Cid%21%3D123&sorts=-createdat';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob,id!=123');
       expect(result.sorts).toBe('-createdat');
@@ -768,16 +768,16 @@ describe('SieveQueryBuilder', () => {
     it('should handle query string with leading question mark', () => {
       const queryString = '?filters=name@=Bob&page=1';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob');
       expect(result.page).toBe(1);
     });
 
     it('should handle empty query string', () => {
-      const builder = SieveQueryBuilder.parseQueryString<Author>('');
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>('');
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('');
       expect(result.sorts).toBe('');
@@ -788,12 +788,12 @@ describe('SieveQueryBuilder', () => {
     it('should allow chaining after parsing query string', () => {
       const queryString = 'filters=name@=Bob&sorts=name&page=1&pageSize=10';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString)
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString)
         .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
         .sortByDescending('createdat')
         .page(2);
 
-      const result = builder.buildSieveModel();
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toContain('name@=Bob');
       expect(result.filters).toContain('createdat>=');
@@ -804,7 +804,7 @@ describe('SieveQueryBuilder', () => {
     });
 
     it('should support round-trip with query string', () => {
-      const original = SieveQueryBuilder.create<Author>()
+      const original = SievePlusQueryBuilder.create<Author>()
         .filterContains('name', 'Bob')
         .filterNotEquals('id', '123')
         .sortByDescending('createdat')
@@ -813,7 +813,7 @@ describe('SieveQueryBuilder', () => {
         .pageSize(15);
 
       const queryString = original.buildQueryString();
-      const parsed = SieveQueryBuilder.parseQueryString<Author>(queryString);
+      const parsed = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
       const rebuilt = parsed.buildQueryString();
 
       expect(rebuilt).toBe(queryString);
@@ -822,8 +822,8 @@ describe('SieveQueryBuilder', () => {
     it('should handle complex real-world query string', () => {
       const queryString = 'filters=name@=Bob,createdat>=2024-01-01T00:00:00.000Z,BooksCount>=3&sorts=-createdat,name&page=2&pageSize=20';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toContain('name@=Bob');
       expect(result.filters).toContain('createdat>=2024-01-01T00:00:00.000Z');
@@ -836,8 +836,8 @@ describe('SieveQueryBuilder', () => {
     it('should handle case-insensitive parameter names', () => {
       const queryString = 'Filters=name@=Bob&Sorts=name&Page=1&PageSize=10';
 
-      const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
-      const result = builder.buildSieveModel();
+      const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
+      const result = builder.buildSievePlusModel();
 
       expect(result.filters).toBe('name@=Bob');
       expect(result.sorts).toBe('name');
@@ -849,14 +849,14 @@ describe('SieveQueryBuilder', () => {
   describe('Introspection methods', () => {
     describe('getFilters', () => {
       it('should return empty array when no filters', () => {
-        const builder = SieveQueryBuilder.create<Author>();
+        const builder = SievePlusQueryBuilder.create<Author>();
         const filters = builder.getFilters();
 
         expect(filters).toEqual([]);
       });
 
       it('should parse single filter into FilterInfo', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob');
 
         const filters = builder.getFilters();
@@ -869,7 +869,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should parse multiple filters', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterContains('name', 'Bob')
           .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'));
 
@@ -884,7 +884,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should parse all filter operators correctly', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('id', '1')
           .filterNotEquals('id', '2')
           .filterContains('name', 'Bob')
@@ -908,7 +908,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should parse custom property filters', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterByName('BooksCount', '>=', 5);
 
         const filters = builder.getFilters();
@@ -920,7 +920,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should flatten filters from multiple OR groups', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob')
           .or()
           .filterEquals('name', 'Alice')
@@ -938,7 +938,7 @@ describe('SieveQueryBuilder', () => {
 
     describe('getFilterGroups', () => {
       it('should return empty groups when no filters', () => {
-        const builder = SieveQueryBuilder.create<Author>();
+        const builder = SievePlusQueryBuilder.create<Author>();
         const groups = builder.getFilterGroups();
 
         expect(groups).toHaveLength(1);
@@ -946,7 +946,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should return single group with filters', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob')
           .filterGreaterThan('createdat', new Date('2024-01-01'));
 
@@ -959,7 +959,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should separate OR groups correctly', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob')
           .filterGreaterThan('createdat', new Date('2024-01-01'))
           .or()
@@ -978,7 +978,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should handle multiple OR groups', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob')
           .or()
           .filterEquals('name', 'Alice')
@@ -996,14 +996,14 @@ describe('SieveQueryBuilder', () => {
 
     describe('getSorts', () => {
       it('should return empty array when no sorts', () => {
-        const builder = SieveQueryBuilder.create<Author>();
+        const builder = SievePlusQueryBuilder.create<Author>();
         const sorts = builder.getSorts();
 
         expect(sorts).toEqual([]);
       });
 
       it('should parse ascending sort', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortBy('name');
 
         const sorts = builder.getSorts();
@@ -1015,7 +1015,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should parse descending sort', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortByDescending('createdat');
 
         const sorts = builder.getSorts();
@@ -1027,7 +1027,7 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should parse multiple sorts', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortByDescending('createdat')
           .sortBy('name')
           .sortByName('BooksCount', true);
@@ -1046,28 +1046,28 @@ describe('SieveQueryBuilder', () => {
 
     describe('getPage and getPageSize', () => {
       it('should return undefined when not set', () => {
-        const builder = SieveQueryBuilder.create<Author>();
+        const builder = SievePlusQueryBuilder.create<Author>();
 
         expect(builder.getPage()).toBeUndefined();
         expect(builder.getPageSize()).toBeUndefined();
       });
 
       it('should return page when set', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .page(5);
 
         expect(builder.getPage()).toBe(5);
       });
 
       it('should return pageSize when set', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .pageSize(25);
 
         expect(builder.getPageSize()).toBe(25);
       });
 
       it('should return both when set', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .page(3)
           .pageSize(50);
 
@@ -1078,27 +1078,27 @@ describe('SieveQueryBuilder', () => {
 
     describe('hasFilter', () => {
       it('should return false when no filters', () => {
-        const builder = SieveQueryBuilder.create<Author>();
+        const builder = SievePlusQueryBuilder.create<Author>();
 
         expect(builder.hasFilter('name')).toBe(false);
       });
 
       it('should return true when filter exists', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob');
 
         expect(builder.hasFilter('name')).toBe(true);
       });
 
       it('should return false when filter does not exist', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob');
 
         expect(builder.hasFilter('id')).toBe(false);
       });
 
       it('should find filters across multiple groups', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterEquals('name', 'Bob')
           .or()
           .filterEquals('id', '123');
@@ -1108,14 +1108,14 @@ describe('SieveQueryBuilder', () => {
       });
 
       it('should detect custom property filters', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterByName('BooksCount', '>=', 5);
 
         expect(builder.hasFilter('BooksCount')).toBe(true);
       });
 
       it('should work with all filter operators', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .filterContains('name', 'Bob')
           .filterGreaterThan('createdat', new Date('2024-01-01'));
 
@@ -1126,41 +1126,41 @@ describe('SieveQueryBuilder', () => {
 
     describe('hasSort', () => {
       it('should return false when no sorts', () => {
-        const builder = SieveQueryBuilder.create<Author>();
+        const builder = SievePlusQueryBuilder.create<Author>();
 
         expect(builder.hasSort('name')).toBe(false);
       });
 
       it('should return true for ascending sort', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortBy('name');
 
         expect(builder.hasSort('name')).toBe(true);
       });
 
       it('should return true for descending sort', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortByDescending('createdat');
 
         expect(builder.hasSort('createdat')).toBe(true);
       });
 
       it('should return false when sort does not exist', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortBy('name');
 
         expect(builder.hasSort('createdat')).toBe(false);
       });
 
       it('should detect custom property sorts', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortByName('BooksCount', true);
 
         expect(builder.hasSort('BooksCount')).toBe(true);
       });
 
       it('should work with multiple sorts', () => {
-        const builder = SieveQueryBuilder.create<Author>()
+        const builder = SievePlusQueryBuilder.create<Author>()
           .sortByDescending('createdat')
           .sortBy('name')
           .sortByName('BooksCount');
@@ -1175,7 +1175,7 @@ describe('SieveQueryBuilder', () => {
     describe('Integration - parsing and introspection', () => {
       it('should introspect parsed query string', () => {
         const queryString = 'filters=name@=Bob,createdat>=2024-01-01T00:00:00.000Z&sorts=-createdat,name&page=2&pageSize=20';
-        const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
+        const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
 
         // Check filters
         const filters = builder.getFilters();
@@ -1211,7 +1211,7 @@ describe('SieveQueryBuilder', () => {
           page: 1,
           pageSize: 10
         };
-        const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
+        const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
 
         // Check filter groups
         const groups = builder.getFilterGroups();
@@ -1232,7 +1232,7 @@ describe('SieveQueryBuilder', () => {
           page: 1,
           pageSize: 10
         };
-        const builder = SieveQueryBuilder.fromSieveModel<Author>(model);
+        const builder = SievePlusQueryBuilder.fromSievePlusModel<Author>(model);
 
         const groups = builder.getFilterGroups();
         // When parsed, "name==Bob || name==Alice || name==Charlie" creates 3 OR groups

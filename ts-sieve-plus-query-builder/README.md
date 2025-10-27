@@ -11,11 +11,11 @@ Build type-safe Sieve query strings for your TypeScript/JavaScript frontend with
 - ✅ **Type-safe** - Full TypeScript support with compile-time property name checking
 - ✅ **Powerful OR queries** - Full support for `||` operator and parentheses grouping
 - ✅ **Fluent API** - Chain methods for readable query building
-- ✅ **Multiple output formats** - Query strings, SieveModel objects, or query parameter objects
+- ✅ **Multiple output formats** - Query strings, SievePlusModel objects, or query parameter objects
 - ✅ **All Sieve operators** - `==`, `!=`, `@=`, `_=`, `>`, `<`, `>=`, `<=`
 - ✅ **Custom property support** - Handle mapped properties from your Sieve processor
 - ✅ **Date handling** - Automatic ISO string conversion for Date objects
-- ✅ **Round-trip parsing** - Parse query strings and SieveModels back to builders
+- ✅ **Round-trip parsing** - Parse query strings and SievePlusModels back to builders
 - ✅ **Zero dependencies** - Lightweight and standalone
 
 ## Installation
@@ -29,10 +29,10 @@ npm install ts-sieve-plus-query-builder
 ### Basic Usage
 
 ```typescript
-import { SieveQueryBuilder } from 'ts-sieve-plus-query-builder';
+import { SievePlusQueryBuilder } from 'ts-sieve-plus-query-builder';
 
-// Define your entity interface (matches your C# model)
-interface Product {
+// Define your query model interface (matches your C# query model)
+interface ProductQueryModel {
   id: number;
   name: string;
   price: number;
@@ -41,7 +41,7 @@ interface Product {
 }
 
 // Build a type-safe query
-const queryString = SieveQueryBuilder.create<Product>()
+const queryString = SievePlusQueryBuilder.create<ProductQueryModel>()
   .filterContains('name', 'laptop')
   .filterGreaterThan('price', 500)
   .sortByDescending('price')
@@ -54,13 +54,38 @@ const response = await fetch(`/api/products?${queryString}`);
 const products = await response.json();
 ```
 
+### Integration with Generated TypeScript Client
+
+When using NSwag to generate your TypeScript client from .NET's `SievePlusRequest<T>`, the query builder integrates seamlessly:
+
+```typescript
+import { SievePlusQueryBuilder } from 'ts-sieve-plus-query-builder';
+import { ProductClient, ProductQueryModel } from './generated-client';
+
+const client = new ProductClient();
+
+// Create query using the query model type
+const builder = SievePlusQueryBuilder.create<ProductQueryModel>()
+  .filterContains('name', 'laptop')
+  .filterGreaterThan('price', 500)
+  .sortByDescending('price')
+  .page(1)
+  .pageSize(20);
+
+// Build the model - fully type-safe with generated types
+const model = builder.buildSievePlusModel();
+
+// Use with generated client - TypeScript validates compatibility
+const products = await client.getProducts(model);
+```
+
 ## Powerful OR Queries
 
 ### Simple OR
 
 ```typescript
 // Products where category is Electronics OR price is greater than $100
-const query = SieveQueryBuilder.create<Product>()
+const query = SievePlusQueryBuilder.create<Product>()
   .filterEquals('category', 'Electronics')
   .or()
   .filterGreaterThan('price', 100)
@@ -75,7 +100,7 @@ Use `beginGroup()` and `endGroup()` for explicit parentheses:
 
 ```typescript
 // (Category is Electronics OR Computers) AND Price > $500
-const query = SieveQueryBuilder.create<Product>()
+const query = SievePlusQueryBuilder.create<Product>()
   .beginGroup()
     .filterEquals('category', 'Electronics')
     .or()
@@ -99,7 +124,7 @@ interface Computer {
 }
 
 // Computers with processor Intel i9, AMD Ryzen 9, or Apple M2, and price > $1000
-const query = SieveQueryBuilder.create<Computer>()
+const query = SievePlusQueryBuilder.create<Computer>()
   .filterWithAlternatives(
     'processor',
     ['Intel i9', 'AMD Ryzen 9', 'Apple M2'],
@@ -114,7 +139,7 @@ const query = SieveQueryBuilder.create<Computer>()
 
 ```typescript
 // ((title A OR title B) AND pages > 100) AND price < 50
-const query = SieveQueryBuilder.create<Book>()
+const query = SievePlusQueryBuilder.create<Book>()
   .beginGroup()
     .beginGroup()
       .filterEquals('title', 'Book A')
@@ -132,7 +157,7 @@ const query = SieveQueryBuilder.create<Book>()
 ## All Filter Operators
 
 ```typescript
-const builder = SieveQueryBuilder.create<Product>()
+const builder = SievePlusQueryBuilder.create<Product>()
   .filterEquals('id', 42)                          // ==
   .filterNotEquals('status', 'Deleted')            // !=
   .filterContains('description', 'awesome')        // @=
@@ -149,7 +174,7 @@ const builder = SieveQueryBuilder.create<Product>()
 By default, filter methods append to existing filters. Use the `replace` parameter to replace existing filters for the same property:
 
 ```typescript
-const builder = SieveQueryBuilder.create<Product>();
+const builder = SievePlusQueryBuilder.create<Product>();
 
 // Without replace - appends filters (can create duplicates)
 builder
@@ -194,7 +219,7 @@ All filter methods support the `replace` parameter:
 const thirtyDaysAgo = new Date();
 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-const query = SieveQueryBuilder.create<Product>()
+const query = SievePlusQueryBuilder.create<Product>()
   .filterGreaterThanOrEqual('createdat', thirtyDaysAgo)
   .buildFiltersString();
 
@@ -207,10 +232,10 @@ For properties mapped in your C# `ApplicationSieveProcessor`:
 
 ```typescript
 // C# Sieve Processor maps a.Books.Count to "BooksCount"
-const query = SieveQueryBuilder.create<Author>()
+const query = SievePlusQueryBuilder.create<Author>()
   .filterByName('BooksCount', '>=', 5)
   .sortByName('BooksCount', true) // descending
-  .buildSieveModel();
+  .buildSievePlusModel();
 
 // Result: { filters: "BooksCount>=5", sorts: "-BooksCount" }
 ```
@@ -238,10 +263,10 @@ builder
 ## Pagination
 
 ```typescript
-const query = SieveQueryBuilder.create<Product>()
+const query = SievePlusQueryBuilder.create<Product>()
   .page(2)
   .pageSize(25)
-  .buildSieveModel();
+  .buildSievePlusModel();
 
 // Result: { filters: "", sorts: "", page: 2, pageSize: 25 }
 ```
@@ -253,21 +278,21 @@ const query = SieveQueryBuilder.create<Product>()
 ```typescript
 // Parse from a complete query string
 const queryString = 'filters=name@=Bob&sorts=-createdat&page=2&pageSize=20';
-const builder = SieveQueryBuilder.parseQueryString<Author>(queryString);
+const builder = SievePlusQueryBuilder.parseQueryString<Author>(queryString);
 
 // Works with leading '?' too
 const urlSearch = '?filters=name@=Bob&page=1';
-const builder2 = SieveQueryBuilder.parseQueryString<Author>(urlSearch);
+const builder2 = SievePlusQueryBuilder.parseQueryString<Author>(urlSearch);
 
 // Continue building on top of the parsed query
 builder
   .filterEquals('status', 'active')
   .sortBy('name');
 
-const model = builder.buildSieveModel();
+const model = builder.buildSievePlusModel();
 ```
 
-### Parse from SieveModel
+### Parse from SievePlusModel
 
 Useful with React Router or URL search params:
 
@@ -281,7 +306,7 @@ const sorts = searchParams.get('sorts') ?? "";
 const pageSize = Number.parseInt(searchParams.get('pageSize') ?? "10");
 const page = Number.parseInt(searchParams.get('page') ?? "1");
 
-const queryBuilder = SieveQueryBuilder.fromSieveModel<Product>({
+const queryBuilder = SievePlusQueryBuilder.fromSievePlusModel<Product>({
   pageSize: pageSize,
   page: page,
   sorts: sorts,
@@ -294,7 +319,7 @@ queryBuilder
   .sortByDescending('createdat');
 
 // Or just use it as-is
-const model = queryBuilder.buildSieveModel();
+const model = queryBuilder.buildSievePlusModel();
 ```
 
 ### Round-Trip Support
@@ -303,7 +328,7 @@ Both parsing methods support round-trip conversion:
 
 ```typescript
 // Build a query
-const original = SieveQueryBuilder.create<Product>()
+const original = SievePlusQueryBuilder.create<Product>()
   .filterContains('name', 'laptop')
   .sortBy('name')
   .page(1)
@@ -311,30 +336,57 @@ const original = SieveQueryBuilder.create<Product>()
 
 // Round-trip via query string
 const queryString = original.buildQueryString();
-const fromQuery = SieveQueryBuilder.parseQueryString<Product>(queryString);
+const fromQuery = SievePlusQueryBuilder.parseQueryString<Product>(queryString);
 const rebuilt1 = fromQuery.buildQueryString();
 // rebuilt1 === queryString ✅
 
-// Round-trip via SieveModel
-const model = original.buildSieveModel();
-const fromModel = SieveQueryBuilder.fromSieveModel<Product>(model);
-const rebuilt2 = fromModel.buildSieveModel();
+// Round-trip via SievePlusModel
+const model = original.buildSievePlusModel();
+const fromModel = SievePlusQueryBuilder.fromSievePlusModel<Product>(model);
+const rebuilt2 = fromModel.buildSievePlusModel();
 // rebuilt2 equals model ✅
 
 // Add more filters/sorts after parsing
-const modified = SieveQueryBuilder.parseQueryString<Product>(queryString)
+const modified = SievePlusQueryBuilder.parseQueryString<Product>(queryString)
   .filterGreaterThanOrEqual('createdat', new Date('2024-01-01'))
   .page(2);
 // Result includes both original and new filters/sorts
 ```
 
-## Output Formats
+## Generic Type Support
 
-### 1. SieveModel Object
+The query builder uses TypeScript generics to maintain type safety with your query models:
 
 ```typescript
-const model = builder.buildSieveModel();
-// { filters: "name@=laptop", sorts: "-price", page: 1, pageSize: 10 }
+// The builder is generic over your query model type
+const builder = SievePlusQueryBuilder.create<ProductQueryModel>();
+
+// The output model is also generic
+const model: SievePlusModel<ProductQueryModel> = builder.buildSievePlusModel();
+```
+
+The `SievePlusModel<T>` interface includes:
+- `filters: string` - Filter query string
+- `sorts: string` - Sort query string
+- `page: number` - Page number
+- `pageSize: number` - Page size
+- `queryModel: T | undefined` - Query model type (for type safety only, always `undefined` at runtime)
+
+This matches the generated TypeScript interface from .NET's `SievePlusRequest<TQueryModel>`, ensuring seamless integration.
+
+## Output Formats
+
+### 1. SievePlusModel Object
+
+```typescript
+const model = builder.buildSievePlusModel();
+// {
+//   filters: "name@=laptop",
+//   sorts: "-price",
+//   page: 1,
+//   pageSize: 10,
+//   queryModel: undefined  // Type marker only
+// }
 ```
 
 ### 2. Query String
@@ -373,7 +425,7 @@ const sortsString = builder.buildSortsString();
 
 ```typescript
 import { useState, useEffect } from 'react';
-import { SieveQueryBuilder } from 'ts-sieve-plus-query-builder';
+import { SievePlusQueryBuilder } from 'ts-sieve-plus-query-builder';
 
 interface Product {
   id: number;
@@ -390,7 +442,7 @@ function ProductSearch() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const builder = SieveQueryBuilder.create<Product>()
+      const builder = SievePlusQueryBuilder.create<Product>()
         .page(page)
         .pageSize(20)
         .sortByDescending('createdat');
@@ -437,13 +489,13 @@ function ProductSearch() {
 
 ```typescript
 import { useSearchParams } from 'react-router-dom';
-import { SieveQueryBuilder } from 'ts-sieve-plus-query-builder';
+import { SievePlusQueryBuilder } from 'ts-sieve-plus-query-builder';
 
 function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Parse current query from URL
-  const builder = SieveQueryBuilder.parseQueryString<Product>(
+  const builder = SievePlusQueryBuilder.parseQueryString<Product>(
     searchParams.toString()
   );
 
@@ -479,7 +531,7 @@ function ProductList() {
 ### Real-World Example: E-Commerce Filtering
 
 ```typescript
-import { SieveQueryBuilder } from 'ts-sieve-plus-query-builder';
+import { SievePlusQueryBuilder } from 'ts-sieve-plus-query-builder';
 
 interface Computer {
   processor: string;
@@ -500,7 +552,7 @@ function ComputerFilter() {
   });
 
   const buildQuery = () => {
-    const builder = SieveQueryBuilder.create<Computer>();
+    const builder = SievePlusQueryBuilder.create<Computer>();
 
     // Processor alternatives with shared constraints
     builder.filterWithAlternatives(
@@ -534,7 +586,7 @@ function ComputerFilter() {
 Examine filters and sorts programmatically:
 
 ```typescript
-const builder = SieveQueryBuilder.create<Product>()
+const builder = SievePlusQueryBuilder.create<Product>()
   .filterEquals('category', 'Books')
   .filterGreaterThan('price', 20)
   .or()
@@ -571,13 +623,13 @@ Mismatched `beginGroup()` and `endGroup()` calls throw errors:
 
 ```typescript
 // ❌ Throws Error: "Unmatched beginGroup() call - missing endGroup()"
-const query = SieveQueryBuilder.create<Product>()
+const query = SievePlusQueryBuilder.create<Product>()
   .beginGroup()
     .filterEquals('name', 'Test')
   .buildFiltersString();
 
 // ❌ Throws Error: "endGroup() called without matching beginGroup()"
-const query2 = SieveQueryBuilder.create<Product>()
+const query2 = SievePlusQueryBuilder.create<Product>()
   .filterEquals('name', 'Test')
   .endGroup()
   .buildFiltersString();
@@ -600,9 +652,9 @@ interface ProductDto {
 }
 
 // Use generated types for type safety
-const query = SieveQueryBuilder.create<ProductDto>()
+const query = SievePlusQueryBuilder.create<ProductDto>()
   .filterContains('name', 'laptop')  // IntelliSense works!
-  .buildSieveModel();
+  .buildSievePlusModel();
 ```
 
 ### 2. Encapsulate Complex Queries
@@ -610,14 +662,14 @@ const query = SieveQueryBuilder.create<ProductDto>()
 ```typescript
 class ProductQueries {
   static popularProducts() {
-    return SieveQueryBuilder.create<Product>()
+    return SievePlusQueryBuilder.create<Product>()
       .filterGreaterThan('rating', 4.0)
       .filterGreaterThan('sales', 1000)
       .sortByDescending('sales');
   }
 
   static inPriceRange(min: number, max: number) {
-    return SieveQueryBuilder.create<Product>()
+    return SievePlusQueryBuilder.create<Product>()
       .filterGreaterThanOrEqual('price', min)
       .filterLessThanOrEqual('price', max);
   }
@@ -634,7 +686,7 @@ const popular = ProductQueries.popularProducts()
 
 ```typescript
 // ❌ WRONG - Constraints only apply to second group
-const wrong = SieveQueryBuilder.create<Product>()
+const wrong = SievePlusQueryBuilder.create<Product>()
   .filterEquals('category', 'Electronics')
   .or()
   .filterEquals('category', 'Computers')
@@ -643,7 +695,7 @@ const wrong = SieveQueryBuilder.create<Product>()
 // Output: "category==Electronics || category==Computers,price>500"
 
 // ✅ CORRECT - Use parentheses and apply constraints after group
-const correct = SieveQueryBuilder.create<Product>()
+const correct = SievePlusQueryBuilder.create<Product>()
   .beginGroup()
     .filterEquals('category', 'Electronics')
     .or()
@@ -665,7 +717,7 @@ interface Product {
   price: number;
 }
 
-const builder = SieveQueryBuilder.create<Product>();
+const builder = SievePlusQueryBuilder.create<Product>();
 
 // ✅ These work - properties exist
 builder.filterEquals('name', 'Test');

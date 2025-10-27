@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SieveQueryBuilder } from '../../../../../ts-sieve-plus-query-builder/src/index';
+import { SievePlusQueryBuilder } from '../../../../../ts-sieve-plus-query-builder/src/index';
 import {type Computer, type ComputerQueryModel, ComputerStoreClient} from "../generated-client.ts";
 import {resolveRefs} from "dotnet-json-refs";
 
@@ -25,7 +25,7 @@ export default function Computers() {
   const fetchComputers = async () => {
     setLoading(true);
     try {
-      const builder = SieveQueryBuilder.create<Computer>()
+      const builder = SievePlusQueryBuilder.create<ComputerQueryModel>()
         .page(1)
         .pageSize(50);
 
@@ -62,7 +62,7 @@ export default function Computers() {
         builder.sortBy(sortBy as any);
       }
 
-      const model = builder.buildSieveModel();
+      const model = builder.buildSievePlusModel();
       const result = await client.getComputers(model);
       setComputers(resolveRefs(result));
     } catch (error) {
