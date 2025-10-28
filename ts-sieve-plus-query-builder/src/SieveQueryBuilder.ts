@@ -52,9 +52,19 @@ type PropertyKeys<T> = {
  * Can be a simple filter, an AND group, or an OR group
  */
 class FilterSegment {
-  parts: (string | FilterSegment)[] = [];
-  isOrGroup: boolean = false;
-  wrapInParentheses: boolean = false;
+  readonly parts: readonly (string | FilterSegment)[];
+  readonly isOrGroup: boolean;
+  readonly wrapInParentheses: boolean;
+
+  constructor(
+    parts: readonly (string | FilterSegment)[] = [],
+    isOrGroup: boolean = false,
+    wrapInParentheses: boolean = false
+  ) {
+    this.parts = parts;
+    this.isOrGroup = isOrGroup;
+    this.wrapInParentheses = wrapInParentheses;
+  }
 
   toQueryString(): string {
     if (this.parts.length === 0) {
@@ -73,19 +83,81 @@ class FilterSegment {
 
     return result;
   }
+
+  /**
+   * Returns a new FilterSegment with the added part
+   */
+  addPart(part: string | FilterSegment): FilterSegment {
+    return new FilterSegment([...this.parts, part], this.isOrGroup, this.wrapInParentheses);
+  }
+
+  /**
+   * Returns a new FilterSegment with filtered parts
+   */
+  filterParts(predicate: (part: string | FilterSegment) => boolean): FilterSegment {
+    return new FilterSegment(this.parts.filter(predicate), this.isOrGroup, this.wrapInParentheses);
+  }
 }
 
 export class SievePlusQueryBuilder<T extends object> {
-  private filters: string[] = [];
-  private filterGroups: string[][] = [[]]; // Support for OR groups (backward compat)
-  private currentGroupIndex: number = 0;
-  private sorts: string[] = [];
-  private pageValue?: number;
-  private pageSizeValue?: number;
+  private readonly filters: readonly string[];
+  private readonly filterGroups: readonly (readonly string[])[]; // Support for OR groups (backward compat)
+  private readonly currentGroupIndex: number;
+  private readonly sorts: readonly string[];
+  private readonly pageValue?: number;
+  private readonly pageSizeValue?: number;
 
   // New fields for parentheses support
-  private segmentStack: FilterSegment[] = [];
-  private currentSegment: FilterSegment = new FilterSegment();
+  private readonly segmentStack: readonly FilterSegment[];
+  private readonly currentSegment: FilterSegment;
+
+  /**
+   * Private constructor - use static factory methods to create instances
+   */
+  private constructor(
+    filters: readonly string[] = [],
+    filterGroups: readonly (readonly string[])[] = [[]],
+    currentGroupIndex: number = 0,
+    sorts: readonly string[] = [],
+    pageValue?: number,
+    pageSizeValue?: number,
+    segmentStack: readonly FilterSegment[] = [],
+    currentSegment: FilterSegment = new FilterSegment()
+  ) {
+    this.filters = filters;
+    this.filterGroups = filterGroups;
+    this.currentGroupIndex = currentGroupIndex;
+    this.sorts = sorts;
+    this.pageValue = pageValue;
+    this.pageSizeValue = pageSizeValue;
+    this.segmentStack = segmentStack;
+    this.currentSegment = currentSegment;
+  }
+
+  /**
+   * Clone this builder with optional property overrides
+   */
+  private clone(overrides: Partial<{
+    filters: readonly string[];
+    filterGroups: readonly (readonly string[])[];
+    currentGroupIndex: number;
+    sorts: readonly string[];
+    pageValue: number | undefined;
+    pageSizeValue: number | undefined;
+    segmentStack: readonly FilterSegment[];
+    currentSegment: FilterSegment;
+  }> = {}): SievePlusQueryBuilder<T> {
+    return new SievePlusQueryBuilder<T>(
+      overrides.filters ?? this.filters,
+      overrides.filterGroups ?? this.filterGroups,
+      overrides.currentGroupIndex ?? this.currentGroupIndex,
+      overrides.sorts ?? this.sorts,
+      overrides.pageValue !== undefined ? overrides.pageValue : this.pageValue,
+      overrides.pageSizeValue !== undefined ? overrides.pageSizeValue : this.pageSizeValue,
+      overrides.segmentStack ?? this.segmentStack,
+      overrides.currentSegment ?? this.currentSegment
+    );
+  }
 
   /**
    * Create a new SievePlusQueryBuilder instance
@@ -99,23 +171,24 @@ export class SievePlusQueryBuilder<T extends object> {
    * @param model The SievePlusModel object with filters, sorts, page, and pageSize
    */
   static fromSievePlusModel<T extends object>(model: SievePlusModel<T>): SievePlusQueryBuilder<T> {
-    const builder = new SievePlusQueryBuilder<T>();
+    let builder = new SievePlusQueryBuilder<T>();
 
     if (model.filters) {
       // Parse filters into groups (handles OR with " || " separator)
-      this.parseFiltersIntoGroups(model.filters, builder);
+      const { filterGroups, currentGroupIndex, currentSegment } = this.parseFiltersIntoGroupsImmutable(model.filters);
+      builder = builder.clone({ filterGroups, currentGroupIndex, currentSegment });
     }
 
     if (model.sorts) {
-      builder.sorts = this.parseSorts(model.sorts);
+      builder = builder.clone({ sorts: this.parseSorts(model.sorts) });
     }
 
     if (model.page !== undefined && model.page !== null) {
-      builder.pageValue = model.page;
+      builder = builder.clone({ pageValue: model.page });
     }
 
     if (model.pageSize !== undefined && model.pageSize !== null) {
-      builder.pageSizeValue = model.pageSize;
+      builder = builder.clone({ pageSizeValue: model.pageSize });
     }
 
     return builder;
@@ -126,7 +199,7 @@ export class SievePlusQueryBuilder<T extends object> {
    * @param queryString The query string to parse (e.g., "filters=name@=Bob&sorts=-createdat&page=1&pageSize=10")
    */
   static parseQueryString<T extends object>(queryString: string): SievePlusQueryBuilder<T> {
-    const builder = new SievePlusQueryBuilder<T>();
+    let builder = new SievePlusQueryBuilder<T>();
 
     if (!queryString || queryString.trim() === '') {
       return builder;
@@ -146,21 +219,22 @@ export class SievePlusQueryBuilder<T extends object> {
 
       switch (key) {
         case 'filters':
-          this.parseFiltersIntoGroups(value, builder);
+          const { filterGroups, currentGroupIndex, currentSegment } = this.parseFiltersIntoGroupsImmutable(value);
+          builder = builder.clone({ filterGroups, currentGroupIndex, currentSegment });
           break;
         case 'sorts':
-          builder.sorts = this.parseSorts(value);
+          builder = builder.clone({ sorts: this.parseSorts(value) });
           break;
         case 'page':
           const page = parseInt(value, 10);
           if (!isNaN(page)) {
-            builder.pageValue = page;
+            builder = builder.clone({ pageValue: page });
           }
           break;
         case 'pagesize':
           const pageSize = parseInt(value, 10);
           if (!isNaN(pageSize)) {
-            builder.pageSizeValue = pageSize;
+            builder = builder.clone({ pageSizeValue: pageSize });
           }
           break;
       }
@@ -194,20 +268,26 @@ export class SievePlusQueryBuilder<T extends object> {
   }
 
   /**
-   * Parse filters string and populate builder's filter groups
+   * Parse filters string and return filter groups (immutable version)
    * Handles both comma-separated AND filters and " || " separated OR groups
    */
-  private static parseFiltersIntoGroups<T extends object>(
-    filtersString: string,
-    builder: SievePlusQueryBuilder<T>
-  ): void {
+  private static parseFiltersIntoGroupsImmutable(
+    filtersString: string
+  ): {
+    filterGroups: readonly (readonly string[])[];
+    currentGroupIndex: number;
+    currentSegment: FilterSegment;
+  } {
     if (!filtersString || filtersString.trim() === '') {
-      return;
+      return {
+        filterGroups: [[]],
+        currentGroupIndex: 0,
+        currentSegment: new FilterSegment()
+      };
     }
 
-    // Clear default empty group
-    builder.filterGroups = [];
-    builder.currentGroupIndex = 0;
+    const filterGroups: string[][] = [];
+    let currentSegment = new FilterSegment();
 
     // Split by " || " for OR groups
     const orGroups = filtersString.split(' || ');
@@ -220,175 +300,225 @@ export class SievePlusQueryBuilder<T extends object> {
         .filter(f => f.length > 0);
 
       if (filters.length > 0) {
-        builder.filterGroups.push(filters);
+        filterGroups.push(filters);
         // Also add to current segment for consistency
         filters.forEach(filter => {
-          builder.currentSegment.parts.push(filter);
+          currentSegment = currentSegment.addPart(filter);
         });
       }
     }
 
     // Ensure at least one group exists
-    if (builder.filterGroups.length === 0) {
-      builder.filterGroups.push([]);
+    if (filterGroups.length === 0) {
+      filterGroups.push([]);
     }
 
-    builder.currentGroupIndex = builder.filterGroups.length - 1;
+    return {
+      filterGroups,
+      currentGroupIndex: filterGroups.length - 1,
+      currentSegment
+    };
   }
 
   /**
    * Helper method to add a filter to both systems (new segment + old groups)
+   * Returns a new builder instance with the filter added
    */
-  private addFilter(filter: string): void {
-    this.currentSegment.parts.push(filter);
-    this.filterGroups[this.currentGroupIndex].push(filter);
+  private addFilter(filter: string): SievePlusQueryBuilder<T> {
+    const newSegment = this.currentSegment.addPart(filter);
+    const newFilterGroups = this.filterGroups.map((group, index) =>
+      index === this.currentGroupIndex ? [...group, filter] : group
+    );
+
+    return this.clone({
+      currentSegment: newSegment,
+      filterGroups: newFilterGroups
+    });
   }
 
   /**
    * Start a new OR group. Subsequent filters will be OR'd with previous filter groups.
+   * Returns a new builder instance.
    * Example:
    * ```typescript
-   * builder.filterEquals('processor', 'Intel i9')
-   *        .or()
-   *        .filterEquals('processor', 'AMD Ryzen 9')
+   * const query = builder
+   *   .filterEquals('processor', 'Intel i9')
+   *   .or()
+   *   .filterEquals('processor', 'AMD Ryzen 9');
    * // Produces: "processor==Intel i9 || processor==AMD Ryzen 9"
    * ```
    */
-  or(): this {
-    // Mark current segment as OR group
-    this.currentSegment.isOrGroup = true;
+  or(): SievePlusQueryBuilder<T> {
+    // Create new segment marked as OR group
+    const newSegment = new FilterSegment(this.currentSegment.parts, true, this.currentSegment.wrapInParentheses);
 
     // Also maintain backward compatibility with old group system
-    this.filterGroups.push([]);
-    this.currentGroupIndex++;
+    const newFilterGroups = [...this.filterGroups, []];
+    const newGroupIndex = this.currentGroupIndex + 1;
 
-    return this;
+    return this.clone({
+      currentSegment: newSegment,
+      filterGroups: newFilterGroups,
+      currentGroupIndex: newGroupIndex
+    });
   }
 
   /**
    * Begin a grouped sub-expression with parentheses
    * Filters added after beginGroup will be wrapped in parentheses
    * Must be paired with endGroup()
+   * Returns a new builder instance.
    *
    * Example:
    * ```typescript
-   * builder.beginGroup()
-   *        .filterEquals('processor', 'Intel')
-   *        .or()
-   *        .filterEquals('processor', 'AMD')
-   *        .endGroup()
-   *        .filterGreaterThan('price', 1000)
+   * const query = builder
+   *   .beginGroup()
+   *   .filterEquals('processor', 'Intel')
+   *   .or()
+   *   .filterEquals('processor', 'AMD')
+   *   .endGroup()
+   *   .filterGreaterThan('price', 1000);
    * // Produces: (processor==Intel || processor==AMD),price>1000
    * ```
    */
-  beginGroup(): this {
+  beginGroup(): SievePlusQueryBuilder<T> {
     // Push current segment onto stack
-    this.segmentStack.push(this.currentSegment);
+    const newStack = [...this.segmentStack, this.currentSegment];
 
     // Create new segment that will be wrapped in parentheses
-    this.currentSegment = new FilterSegment();
-    this.currentSegment.wrapInParentheses = true;
+    const newSegment = new FilterSegment([], false, true);
 
-    return this;
+    return this.clone({
+      segmentStack: newStack,
+      currentSegment: newSegment
+    });
   }
 
   /**
    * End a grouped sub-expression
    * Must be paired with beginGroup()
+   * Returns a new builder instance.
    */
-  endGroup(): this {
+  endGroup(): SievePlusQueryBuilder<T> {
     if (this.segmentStack.length === 0) {
       throw new Error('endGroup() called without matching beginGroup()');
     }
 
     // Pop the parent segment and add current segment to it
     const completedSegment = this.currentSegment;
-    this.currentSegment = this.segmentStack.pop()!;
-    this.currentSegment.parts.push(completedSegment);
+    const newStack = this.segmentStack.slice(0, -1);
+    const parentSegment = this.segmentStack[this.segmentStack.length - 1];
+    const newSegment = parentSegment.addPart(completedSegment);
 
-    return this;
+    return this.clone({
+      segmentStack: newStack,
+      currentSegment: newSegment
+    });
   }
 
   /**
    * Create a filter group with alternative values for a single property
    * This is a helper for the common case of OR-ing values on one property
+   * Returns a new builder instance.
    *
    * Example:
    * ```typescript
-   * builder.filterWithAlternatives(
-   *     'processor',
-   *     ['Intel i9', 'AMD Ryzen 9'],
-   *     b => b.filterGreaterThan('price', 1000)
-   * )
+   * const query = builder.filterWithAlternatives(
+   *   'processor',
+   *   ['Intel i9', 'AMD Ryzen 9'],
+   *   b => b.filterGreaterThan('price', 1000)
+   * );
    * // Produces: (processor==Intel i9 || processor==AMD Ryzen 9),price>1000
    * ```
    */
   filterWithAlternatives<K extends PropertyKeys<T>>(
     property: K,
     alternatives: (T[K] | string | number | boolean)[],
-    sharedConstraints?: (builder: SievePlusQueryBuilder<T>) => void
-  ): this {
+    sharedConstraints?: (builder: SievePlusQueryBuilder<T>) => SievePlusQueryBuilder<T>
+  ): SievePlusQueryBuilder<T> {
     if (!alternatives || alternatives.length === 0) {
       return this;
     }
 
-    this.beginGroup();
+    let result = this.beginGroup();
 
     for (let i = 0; i < alternatives.length; i++) {
       if (i > 0) {
-        this.or();
+        result = result.or();
       }
-      this.filterEquals(property, alternatives[i]);
+      result = result.filterEquals(property, alternatives[i]);
     }
 
-    this.endGroup();
+    result = result.endGroup();
 
     // Apply shared constraints after the group
     if (sharedConstraints) {
-      sharedConstraints(this);
+      result = sharedConstraints(result);
     }
 
-    return this;
+    return result;
   }
 
   /**
    * Remove all filters for a specific property
+   * Returns a new builder instance.
    */
-  removeFilters<K extends PropertyKeys<T>>(property: K): this {
+  removeFilters<K extends PropertyKeys<T>>(property: K): SievePlusQueryBuilder<T> {
     const propertyName = String(property);
 
-    // Remove from both segment system and old filters array
-    this.currentSegment.parts = this.currentSegment.parts.filter(p => {
+    // Remove from segment system
+    const newSegment = this.currentSegment.filterParts(p => {
       if (typeof p === 'string') {
         return !this.isFilterForProperty(p, propertyName);
       }
       return true; // Keep FilterSegment objects
     });
 
-    this.filters = this.filters.filter(f => !this.isFilterForProperty(f, propertyName));
-    this.filterGroups[this.currentGroupIndex] = this.filterGroups[this.currentGroupIndex]
-      .filter(f => !this.isFilterForProperty(f, propertyName));
+    // Remove from old filters array
+    const newFilters = this.filters.filter(f => !this.isFilterForProperty(f, propertyName));
 
-    return this;
+    // Remove from filter groups
+    const newFilterGroups = this.filterGroups.map((group, index) =>
+      index === this.currentGroupIndex
+        ? group.filter(f => !this.isFilterForProperty(f, propertyName))
+        : group
+    );
+
+    return this.clone({
+      currentSegment: newSegment,
+      filters: newFilters,
+      filterGroups: newFilterGroups
+    });
   }
 
   /**
    * Remove all filters for a specific property name (for mapped properties)
+   * Returns a new builder instance.
    */
-  removeFiltersByName(propertyName: string): this {
-    // Remove from both segment system and old filters array
-    this.currentSegment.parts = this.currentSegment.parts.filter(p => {
+  removeFiltersByName(propertyName: string): SievePlusQueryBuilder<T> {
+    // Remove from segment system
+    const newSegment = this.currentSegment.filterParts(p => {
       if (typeof p === 'string') {
         return !this.isFilterForProperty(p, propertyName);
       }
       return true; // Keep FilterSegment objects
     });
 
-    this.filters = this.filters.filter(f => !this.isFilterForProperty(f, propertyName));
-    this.filterGroups[this.currentGroupIndex] = this.filterGroups[this.currentGroupIndex]
-      .filter(f => !this.isFilterForProperty(f, propertyName));
+    // Remove from old filters array
+    const newFilters = this.filters.filter(f => !this.isFilterForProperty(f, propertyName));
 
-    return this;
+    // Remove from filter groups
+    const newFilterGroups = this.filterGroups.map((group, index) =>
+      index === this.currentGroupIndex
+        ? group.filter(f => !this.isFilterForProperty(f, propertyName))
+        : group
+    );
+
+    return this.clone({
+      currentSegment: newSegment,
+      filters: newFilters,
+      filterGroups: newFilterGroups
+    });
   }
 
   /**
@@ -408,6 +538,7 @@ export class SievePlusQueryBuilder<T extends object> {
 
   /**
    * Add a filter using equals operator (==)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -416,16 +547,17 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: T[K] | string | number | boolean,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
-    this.addFilter(`${String(property)}==${value}`);
-    return this;
+    return builder.addFilter(`${String(property)}==${value}`);
   }
 
   /**
    * Add a filter using not equals operator (!=)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -434,16 +566,17 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: T[K] | string | number | boolean,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
-    this.addFilter(`${String(property)}!=${value}`);
-    return this;
+    return builder.addFilter(`${String(property)}!=${value}`);
   }
 
   /**
    * Add a filter using contains operator (@=)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -452,16 +585,17 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: string,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
-    this.addFilter(`${String(property)}@=${value}`);
-    return this;
+    return builder.addFilter(`${String(property)}@=${value}`);
   }
 
   /**
    * Add a filter using starts with operator (_=)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -470,16 +604,17 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: string,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
-    this.addFilter(`${String(property)}_=${value}`);
-    return this;
+    return builder.addFilter(`${String(property)}_=${value}`);
   }
 
   /**
    * Add a filter using greater than operator (>)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -488,17 +623,18 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: T[K] | string | number | Date,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
-    this.addFilter(`${String(property)}>${formattedValue}`);
-    return this;
+    return builder.addFilter(`${String(property)}>${formattedValue}`);
   }
 
   /**
    * Add a filter using less than operator (<)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -507,17 +643,18 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: T[K] | string | number | Date,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
-    this.addFilter(`${String(property)}<${formattedValue}`);
-    return this;
+    return builder.addFilter(`${String(property)}<${formattedValue}`);
   }
 
   /**
    * Add a filter using greater than or equal operator (>=)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -526,17 +663,18 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: T[K] | string | number | Date,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
-    this.addFilter(`${String(property)}>=${formattedValue}`);
-    return this;
+    return builder.addFilter(`${String(property)}>=${formattedValue}`);
   }
 
   /**
    * Add a filter using less than or equal operator (<=)
+   * Returns a new builder instance.
    * @param property The property to filter on
    * @param value The value to filter by
    * @param replace If true, removes existing filters for this property first (default: false)
@@ -545,17 +683,18 @@ export class SievePlusQueryBuilder<T extends object> {
     property: K,
     value: T[K] | string | number | Date,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFilters(property);
+      builder = builder.removeFilters(property);
     }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
-    this.addFilter(`${String(property)}<=${formattedValue}`);
-    return this;
+    return builder.addFilter(`${String(property)}<=${formattedValue}`);
   }
 
   /**
    * Add a filter using a custom property name (for mapped properties)
+   * Returns a new builder instance.
    * @param propertyName The custom property name (e.g., "BooksCount")
    * @param operator The operator symbol (e.g., ">=", "==", "@=")
    * @param value The value to filter by
@@ -566,55 +705,61 @@ export class SievePlusQueryBuilder<T extends object> {
     operator: string,
     value: string | number | boolean | Date,
     replace: boolean = false
-  ): this {
+  ): SievePlusQueryBuilder<T> {
+    let builder = this as SievePlusQueryBuilder<T>;
     if (replace) {
-      this.removeFiltersByName(propertyName);
+      builder = builder.removeFiltersByName(propertyName);
     }
     const formattedValue = value instanceof Date ? value.toISOString() : value;
-    this.addFilter(`${propertyName}${operator}${formattedValue}`);
-    return this;
+    return builder.addFilter(`${propertyName}${operator}${formattedValue}`);
   }
 
   /**
    * Add ascending sort for a property
+   * Returns a new builder instance.
    */
-  sortBy<K extends PropertyKeys<T>>(property: K): this {
-    this.sorts.push(String(property));
-    return this;
+  sortBy<K extends PropertyKeys<T>>(property: K): SievePlusQueryBuilder<T> {
+    return this.clone({
+      sorts: [...this.sorts, String(property)]
+    });
   }
 
   /**
    * Add descending sort for a property
+   * Returns a new builder instance.
    */
-  sortByDescending<K extends PropertyKeys<T>>(property: K): this {
-    this.sorts.push(`-${String(property)}`);
-    return this;
+  sortByDescending<K extends PropertyKeys<T>>(property: K): SievePlusQueryBuilder<T> {
+    return this.clone({
+      sorts: [...this.sorts, `-${String(property)}`]
+    });
   }
 
   /**
    * Add sort using a custom property name (for mapped properties)
+   * Returns a new builder instance.
    * @param propertyName The custom property name (e.g., "BooksCount")
    * @param descending Whether to sort descending (default: false)
    */
-  sortByName(propertyName: string, descending: boolean = false): this {
-    this.sorts.push(descending ? `-${propertyName}` : propertyName);
-    return this;
+  sortByName(propertyName: string, descending: boolean = false): SievePlusQueryBuilder<T> {
+    return this.clone({
+      sorts: [...this.sorts, descending ? `-${propertyName}` : propertyName]
+    });
   }
 
   /**
    * Set the page number for pagination
+   * Returns a new builder instance.
    */
-  page(page: number): this {
-    this.pageValue = page;
-    return this;
+  page(page: number): SievePlusQueryBuilder<T> {
+    return this.clone({ pageValue: page });
   }
 
   /**
    * Set the page size for pagination
+   * Returns a new builder instance.
    */
-  pageSize(pageSize: number): this {
-    this.pageSizeValue = pageSize;
-    return this;
+  pageSize(pageSize: number): SievePlusQueryBuilder<T> {
+    return this.clone({ pageSizeValue: pageSize });
   }
 
   /**
