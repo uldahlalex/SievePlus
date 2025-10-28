@@ -18,6 +18,55 @@ export interface SievePlusModel<TQueryModel = any> {
 }
 
 /**
+ * Represents a numeric range filter (min/max)
+ */
+export interface RangeFilter {
+  min?: number;
+  max?: number;
+}
+
+/**
+ * UI-focused filter state that maps common UI patterns to SievePlus queries
+ * This type represents how filters are typically managed in UI components,
+ * separate from how they're sent to the API.
+ *
+ * @template TQueryModel The query model type that defines available filter properties
+ *
+ * @example
+ * ```typescript
+ * const [filters, setFilters] = useState<UIFilterState<ComputerQueryModel>>({
+ *   ranges: {
+ *     price: { min: 500, max: 4000 },
+ *     screenSize: { min: 13, max: 17 }
+ *   },
+ *   equals: {
+ *     inStock: true
+ *   },
+ *   alternatives: {
+ *     processor: ['Intel i9', 'AMD Ryzen 9']
+ *   },
+ *   sort: {
+ *     by: 'price',
+ *     desc: false
+ *   }
+ * });
+ * ```
+ */
+export interface UIFilterState<TQueryModel extends object> {
+  /** Numeric range filters (min/max) for properties */
+  ranges?: Partial<Record<PropertyKeys<TQueryModel>, RangeFilter>>;
+  /** Exact equality filters for properties */
+  equals?: Partial<TQueryModel>;
+  /** Alternative values (OR) for a property - useful for multi-select UI */
+  alternatives?: Partial<Record<PropertyKeys<TQueryModel>, any[]>>;
+  /** Sorting configuration */
+  sort?: {
+    by: PropertyKeys<TQueryModel>;
+    desc: boolean;
+  };
+}
+
+/**
  * Represents a parsed filter with its property name, operator, and value
  */
 export interface FilterInfo {
@@ -964,5 +1013,97 @@ export class SievePlusQueryBuilder<T extends object> {
    */
   hasSort(propertyName: string): boolean {
     return this.sorts.some(s => s === propertyName || s === `-${propertyName}`);
+  }
+
+  /**
+   * Build a query from a UIFilterState object
+   * Converts UI-focused filter state into a SievePlusQueryBuilder
+   *
+   * @param uiState The UI filter state
+   * @returns A configured SievePlusQueryBuilder
+   *
+   * @example
+   * ```typescript
+   * const builder = SievePlusQueryBuilder.fromUIFilterState<ComputerQueryModel>({
+   *   ranges: {
+   *     price: { min: 500, max: 4000 }
+   *   },
+   *   equals: {
+   *     inStock: true
+   *   },
+   *   alternatives: {
+   *     processor: ['Intel i9', 'AMD Ryzen 9']
+   *   },
+   *   sort: {
+   *     by: 'price',
+   *     desc: false
+   *   }
+   * });
+   *
+   * const model = builder.buildSievePlusModel();
+   * ```
+   */
+  /**
+   * Helper to convert camelCase to PascalCase
+   */
+  private static toPascalCase(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  static fromUIFilterState<T extends object>(uiState: UIFilterState<T>, usePascalCase: boolean = true): SievePlusQueryBuilder<T> {
+    let builder = new SievePlusQueryBuilder<T>();
+
+    // Apply range filters
+    if (uiState.ranges) {
+      for (const [property, range] of Object.entries(uiState.ranges)) {
+        const typedRange = range as RangeFilter | undefined;
+        const propName = usePascalCase ? this.toPascalCase(property) : property;
+        if (typedRange) {
+          if (typedRange.min !== undefined) {
+            builder = builder.filterByName(propName, '>=', typedRange.min);
+          }
+          if (typedRange.max !== undefined) {
+            builder = builder.filterByName(propName, '<=', typedRange.max);
+          }
+        }
+      }
+    }
+
+    // Apply equals filters
+    if (uiState.equals) {
+      for (const [property, value] of Object.entries(uiState.equals)) {
+        if (value !== undefined && value !== null) {
+          const propName = usePascalCase ? this.toPascalCase(property) : property;
+          builder = builder.filterByName(propName, '==', value as any);
+        }
+      }
+    }
+
+    // Apply alternatives (OR filters)
+    if (uiState.alternatives) {
+      for (const [property, values] of Object.entries(uiState.alternatives)) {
+        if (values && Array.isArray(values) && values.length > 0) {
+          const propName = usePascalCase ? this.toPascalCase(property) : property;
+
+          // Manually build the OR group for alternatives
+          let tempBuilder = builder.beginGroup();
+          for (let i = 0; i < values.length; i++) {
+            if (i > 0) {
+              tempBuilder = tempBuilder.or();
+            }
+            tempBuilder = tempBuilder.filterByName(propName, '==', values[i]);
+          }
+          builder = tempBuilder.endGroup();
+        }
+      }
+    }
+
+    // Apply sorting
+    if (uiState.sort) {
+      const propName = usePascalCase ? this.toPascalCase(String(uiState.sort.by)) : String(uiState.sort.by);
+      builder = builder.sortByName(propName, uiState.sort.desc);
+    }
+
+    return builder;
   }
 }

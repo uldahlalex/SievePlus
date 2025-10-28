@@ -1,24 +1,29 @@
 import {useEffect, useState} from 'react';
-import {SievePlusQueryBuilder} from '../../../../../ts-sieve-plus-query-builder/src/index';
+import {SievePlusQueryBuilder, type UIFilterState} from '../../../../../ts-sieve-plus-query-builder/src/index';
 import {type Computer, type ComputerQueryModel, ComputerStoreClient} from "../generated-client.ts";
 import {resolveRefs} from "dotnet-json-refs";
 
 const client = new ComputerStoreClient('http://localhost:5284');
 
-
 export default function Computers() {
     const [computers, setComputers] = useState<Computer[]>([]);
     const [loading, setLoading] = useState(false);
-    const [processors, setProcessors] = useState<string[]>([]);
-    const [filters, setFilters] = useState<ComputerQueryModel>({
-        price: 500,
-        maxPrice: 4000,
-        minScreenSize: 13,
-        maxScreenSize: 17,
-        ram: 8,
-        inStock: false,
-        sortBy: 'price',
-        sortDesc: false
+    const [filters, setFilters] = useState<UIFilterState<ComputerQueryModel>>({
+        ranges: {
+            price: { min: 500, max: 4000 },
+            screenSize: { min: 13, max: 17 },
+            ram: { min: 8 }
+        },
+        equals: {
+            inStock: false
+        },
+        alternatives: {
+            processor: []
+        },
+        sort: {
+            by: 'price',
+            desc: false
+        }
     });
 
     const availableProcessors = ['Intel i5', 'Intel i7', 'Intel i9', 'AMD Ryzen 5', 'AMD Ryzen 7', 'AMD Ryzen 9', 'Apple M1', 'Apple M2', 'Apple M3'];
@@ -26,34 +31,10 @@ export default function Computers() {
     const fetchComputers = async () => {
         setLoading(true);
         try {
-            let builder = SievePlusQueryBuilder.create<ComputerQueryModel>()
+            const builder = SievePlusQueryBuilder
+                .fromUIFilterState(filters)
                 .page(1)
                 .pageSize(50);
-
-            if (filters.minPrice !== undefined) {
-                builder = builder.filterGreaterThanOrEqual('price', filters.minPrice);
-            }
-            if (filters.maxPrice !== undefined) {
-                builder = builder.filterLessThanOrEqual('price', filters.maxPrice);
-            }
-            if (filters.minScreenSize !== undefined) {
-                builder = builder.filterGreaterThanOrEqual('screenSize', filters.minScreenSize);
-            }
-            if (filters.maxScreenSize !== undefined) {
-                builder = builder.filterLessThanOrEqual('screenSize', filters.maxScreenSize);
-            }
-            if (filters.ram !== undefined) {
-                builder = builder.filterGreaterThanOrEqual('ram', filters.ram);
-            }
-            builder = builder.filterEquals('inStock', filters.inStock ?? false);
-
-            if (processors.length > 0) {
-                builder = builder.filterWithAlternatives('processor', processors, b => b);
-            }
-
-            builder = filters.sortDesc
-                ? builder.sortByDescending(filters.sortBy)
-                : builder.sortBy(filters.sortBy);
 
             const model = builder.buildSievePlusModel();
             const result = await client.getComputers(model);
@@ -67,14 +48,18 @@ export default function Computers() {
 
     useEffect(() => {
         fetchComputers();
-    }, [filters, processors]);
+    }, [filters]);
 
     const toggleProcessor = (processor: string) => {
-        setProcessors(prev =>
-            prev.includes(processor)
-                ? prev.filter(p => p !== processor)
-                : [...prev, processor]
-        );
+        setFilters(prev => ({
+            ...prev,
+            alternatives: {
+                ...prev.alternatives,
+                processor: prev.alternatives?.processor?.includes(processor)
+                    ? prev.alternatives.processor.filter(p => p !== processor)
+                    : [...(prev.alternatives?.processor || []), processor]
+            }
+        }));
     };
 
     return (
@@ -95,7 +80,7 @@ export default function Computers() {
                                     <input
                                         type="checkbox"
                                         className="checkbox checkbox-sm"
-                                        checked={processors.includes(processor)}
+                                        checked={filters.alternatives?.processor?.includes(processor) ?? false}
                                         onChange={() => toggleProcessor(processor)}
                                     />
                                     <span className="text-sm">{processor}</span>
@@ -105,14 +90,20 @@ export default function Computers() {
 
                         {/* Price Range */}
                         <div className="mb-4">
-                            <h3 className="font-semibold mb-2">Price: ${filters.minPrice} - ${filters.maxPrice}</h3>
+                            <h3 className="font-semibold mb-2">Price: ${filters.ranges?.price?.min ?? 500} - ${filters.ranges?.price?.max ?? 4000}</h3>
                             <input
                                 type="range"
                                 min="500"
                                 max="4000"
                                 step="100"
-                                value={filters.minPrice}
-                                onChange={(e) => setFilters(prev => ({ ...prev, minPrice: Number(e.target.value) }))}
+                                value={filters.ranges?.price?.min ?? 500}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    ranges: {
+                                        ...prev.ranges,
+                                        price: { ...prev.ranges?.price, min: Number(e.target.value) }
+                                    }
+                                }))}
                                 className="range range-sm mb-2"
                             />
                             <input
@@ -120,22 +111,34 @@ export default function Computers() {
                                 min="500"
                                 max="4000"
                                 step="100"
-                                value={filters.maxPrice}
-                                onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: Number(e.target.value) }))}
+                                value={filters.ranges?.price?.max ?? 4000}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    ranges: {
+                                        ...prev.ranges,
+                                        price: { ...prev.ranges?.price, max: Number(e.target.value) }
+                                    }
+                                }))}
                                 className="range range-sm"
                             />
                         </div>
 
                         {/* Screen Size */}
                         <div className="mb-4">
-                            <h3 className="font-semibold mb-2">Screen: {filters.minScreenSize}" - {filters.maxScreenSize}"</h3>
+                            <h3 className="font-semibold mb-2">Screen: {filters.ranges?.screenSize?.min ?? 13}" - {filters.ranges?.screenSize?.max ?? 17}"</h3>
                             <input
                                 type="range"
                                 min="13"
                                 max="17"
                                 step="0.1"
-                                value={filters.minScreenSize}
-                                onChange={(e) => setFilters(prev => ({ ...prev, minScreenSize: Number(e.target.value) }))}
+                                value={filters.ranges?.screenSize?.min ?? 13}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    ranges: {
+                                        ...prev.ranges,
+                                        screenSize: { ...prev.ranges?.screenSize, min: Number(e.target.value) }
+                                    }
+                                }))}
                                 className="range range-sm mb-2"
                             />
                             <input
@@ -143,19 +146,31 @@ export default function Computers() {
                                 min="13"
                                 max="17"
                                 step="0.1"
-                                value={filters.maxScreenSize}
-                                onChange={(e) => setFilters(prev => ({ ...prev, maxScreenSize: Number(e.target.value) }))}
+                                value={filters.ranges?.screenSize?.max ?? 17}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    ranges: {
+                                        ...prev.ranges,
+                                        screenSize: { ...prev.ranges?.screenSize, max: Number(e.target.value) }
+                                    }
+                                }))}
                                 className="range range-sm"
                             />
                         </div>
 
                         {/* RAM */}
                         <div className="mb-4">
-                            <h3 className="font-semibold mb-2">Min RAM: {filters.minRam}GB</h3>
+                            <h3 className="font-semibold mb-2">Min RAM: {filters.ranges?.ram?.min ?? 8}GB</h3>
                             <select
                                 className="select select-bordered select-sm w-full"
-                                value={filters.minRam}
-                                onChange={(e) => setFilters(prev => ({ ...prev, minRam: Number(e.target.value) }))}
+                                value={filters.ranges?.ram?.min ?? 8}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    ranges: {
+                                        ...prev.ranges,
+                                        ram: { min: Number(e.target.value) }
+                                    }
+                                }))}
                             >
                                 <option value="8">8GB</option>
                                 <option value="16">16GB</option>
@@ -170,8 +185,14 @@ export default function Computers() {
                                 <input
                                     type="checkbox"
                                     className="checkbox"
-                                    checked={filters.inStockOnly}
-                                    onChange={(e) => setFilters(prev => ({ ...prev, inStockOnly: e.target.checked }))}
+                                    checked={filters.equals?.inStock ?? false}
+                                    onChange={(e) => setFilters(prev => ({
+                                        ...prev,
+                                        equals: {
+                                            ...prev.equals,
+                                            inStock: e.target.checked
+                                        }
+                                    }))}
                                 />
                                 <span>In Stock Only</span>
                             </label>
@@ -182,8 +203,14 @@ export default function Computers() {
                             <h3 className="font-semibold mb-2">Sort By</h3>
                             <select
                                 className="select select-bordered select-sm w-full mb-2"
-                                value={filters.sortBy}
-                                onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as keyof ComputerQueryModel }))}
+                                value={filters.sort?.by ?? 'price'}
+                                onChange={(e) => setFilters(prev => ({
+                                    ...prev,
+                                    sort: {
+                                        ...prev.sort!,
+                                        by: e.target.value as keyof ComputerQueryModel
+                                    }
+                                }))}
                             >
                                 <option value="price">Price</option>
                                 <option value="rating">Rating</option>
@@ -195,8 +222,14 @@ export default function Computers() {
                                 <input
                                     type="checkbox"
                                     className="checkbox checkbox-sm"
-                                    checked={filters.sortDesc}
-                                    onChange={(e) => setFilters(prev => ({ ...prev, sortDesc: e.target.checked }))}
+                                    checked={filters.sort?.desc ?? false}
+                                    onChange={(e) => setFilters(prev => ({
+                                        ...prev,
+                                        sort: {
+                                            ...prev.sort!,
+                                            desc: e.target.checked
+                                        }
+                                    }))}
                                 />
                                 <span className="text-sm">Descending</span>
                             </label>

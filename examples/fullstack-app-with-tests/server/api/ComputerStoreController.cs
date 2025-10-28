@@ -13,6 +13,7 @@ public class ComputerStoreController(IComputerStoreService computerStoreService)
     [HttpPost(nameof(GetComputers))]
     public async Task<List<Computer>> GetComputers([FromBody] SievePlusRequest<ComputerQueryModel> request)
     {
+        Console.WriteLine($"Received request - Filters: '{request.Filters}', Sorts: '{request.Sorts}', Page: {request.Page}, PageSize: {request.PageSize}");
         return await computerStoreService.GetComputers(request);
     }
 

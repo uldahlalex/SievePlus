@@ -17,10 +17,10 @@ public class ApplicationSievePlusProcessor : SievePlusProcessor
     protected override void ConfigureQueryModels(SievePlusQueryModelRegistry registry)
     {
         // Register individual configurations
-        // registry.AddConfiguration<BrandQueryConfiguration>();
-        // registry.AddConfiguration<ComputerQueryConfiguration>();
-        // registry.AddConfiguration<CategoryQueryConfiguration>();
+        registry.AddConfiguration<BrandQueryConfiguration>();
+        registry.AddConfiguration<ComputerQueryConfiguration>();
+        registry.AddConfiguration<CategoryQueryConfiguration>();
 
-        registry.AddConfigurationsFromAssembly(typeof(BrandQueryConfiguration).Assembly);
+        //registry.AddConfigurationsFromAssembly(typeof(BrandQueryConfiguration).Assembly);
     }
 }

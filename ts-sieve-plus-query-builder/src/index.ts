@@ -1,1 +1,6 @@
-export { SievePlusQueryBuilder, type SievePlusModel } from './SieveQueryBuilder';
+export {
+  SievePlusQueryBuilder,
+  type SievePlusModel,
+  type UIFilterState,
+  type RangeFilter
+} from './SieveQueryBuilder';
