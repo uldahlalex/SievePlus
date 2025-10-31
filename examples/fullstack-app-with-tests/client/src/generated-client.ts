@@ -130,117 +130,117 @@ export class ComputerStoreClient {
 }
 
 export interface Computer {
-    Id: string;
-    Name: string;
-    Processor: string;
-    Price: number;
-    ScreenSize: number;
-    Ram: number;
-    Storage: number;
-    GraphicsCard: string;
-    InStock: boolean;
-    Rating: number;
-    Sales: number;
-    CreatedAt: string;
-    BrandId: string | undefined;
-    Brand: Brand | undefined;
-    CategoryId: string | undefined;
-    Category: Category | undefined;
+    id: string;
+    name: string;
+    processor: string;
+    price: number;
+    screenSize: number;
+    ram: number;
+    storage: number;
+    graphicsCard: string;
+    inStock: boolean;
+    rating: number;
+    sales: number;
+    createdAt: string;
+    brandId: string | undefined;
+    brand: Brand | undefined;
+    categoryId: string | undefined;
+    category: Category | undefined;
 }
 
 export interface Brand {
-    Id: string;
-    Name: string;
-    CreatedAt: string;
-    Computers: Computer[];
+    id: string;
+    name: string;
+    createdAt: string;
+    computers: Computer[];
 }
 
 export interface Category {
-    Id: string;
-    Name: string;
-    CreatedAt: string;
-    Computers: Computer[];
+    id: string;
+    name: string;
+    createdAt: string;
+    computers: Computer[];
 }
 
 /** Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation. Use this in controller methods to expose the available query properties to API clients. */
 export interface SievePlusRequestOfComputerQueryModel {
     /** Filter string (e.g., "price>=1000,inStock==true")
 Properties available for filtering are defined in . */
-    Filters: string | undefined;
+    filters: string | undefined;
     /** Sort string (e.g., "price,-rating")
 Properties available for sorting are defined in . */
-    Sorts: string | undefined;
+    sorts: string | undefined;
     /** Page number (1-based) */
-    Page: number | undefined;
+    page: number | undefined;
     /** Page size */
-    PageSize: number | undefined;
+    pageSize: number | undefined;
     /** The query model that defines all available properties for filtering and sorting.
 This property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger. */
-    QueryModel: ComputerQueryModel | undefined;
+    queryModel: ComputerQueryModel | undefined;
 }
 
 export interface ComputerQueryModel {
-    Id: string;
-    Name: string;
-    Processor: string;
-    Price: number;
-    ScreenSize: number;
-    Ram: number;
-    Storage: number;
-    GraphicsCard: string;
-    InStock: boolean;
-    Rating: number;
-    CreatedAt: string;
-    BrandName: string;
-    CategoryName: string;
-    IsPopular: boolean | undefined;
-    IsPremium: boolean | undefined;
-    IsHighPerformance: boolean | undefined;
+    id: string;
+    name: string;
+    processor: string;
+    price: number;
+    screenSize: number;
+    ram: number;
+    storage: number;
+    graphicsCard: string;
+    inStock: boolean;
+    rating: number;
+    createdAt: string;
+    brandName: string;
+    categoryName: string;
+    isPopular: boolean | undefined;
+    isPremium: boolean | undefined;
+    isHighPerformance: boolean | undefined;
 }
 
 /** Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation. Use this in controller methods to expose the available query properties to API clients. */
 export interface SievePlusRequestOfBrandQueryModel {
     /** Filter string (e.g., "price>=1000,inStock==true")
 Properties available for filtering are defined in . */
-    Filters: string | undefined;
+    filters: string | undefined;
     /** Sort string (e.g., "price,-rating")
 Properties available for sorting are defined in . */
-    Sorts: string | undefined;
+    sorts: string | undefined;
     /** Page number (1-based) */
-    Page: number | undefined;
+    page: number | undefined;
     /** Page size */
-    PageSize: number | undefined;
+    pageSize: number | undefined;
     /** The query model that defines all available properties for filtering and sorting.
 This property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger. */
-    QueryModel: BrandQueryModel | undefined;
+    queryModel: BrandQueryModel | undefined;
 }
 
 export interface BrandQueryModel extends Brand {
-    ComputerCount: number;
+    computerCount: number;
 }
 
 /** Strongly-typed Sieve request that includes the query model type for OpenAPI/Swagger generation. Use this in controller methods to expose the available query properties to API clients. */
 export interface SievePlusRequestOfCategoryQueryModel {
     /** Filter string (e.g., "price>=1000,inStock==true")
 Properties available for filtering are defined in . */
-    Filters: string | undefined;
+    filters: string | undefined;
     /** Sort string (e.g., "price,-rating")
 Properties available for sorting are defined in . */
-    Sorts: string | undefined;
+    sorts: string | undefined;
     /** Page number (1-based) */
-    Page: number | undefined;
+    page: number | undefined;
     /** Page size */
-    PageSize: number | undefined;
+    pageSize: number | undefined;
     /** The query model that defines all available properties for filtering and sorting.
 This property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger. */
-    QueryModel: CategoryQueryModel | undefined;
+    queryModel: CategoryQueryModel | undefined;
 }
 
 export interface CategoryQueryModel {
-    Id: string;
-    Name: string;
-    CreatedAt: string;
-    ComputerCount: number;
+    id: string;
+    name: string;
+    createdAt: string;
+    computerCount: number;
 }
 
 export class ApiException extends Error {

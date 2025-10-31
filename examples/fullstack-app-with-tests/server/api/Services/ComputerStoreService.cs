@@ -16,6 +16,8 @@ public class ComputerStoreService(MyDbContext ctx, SievePlusProcessor sievePlusP
 
         return query
             .AsSplitQuery()
+            .Include(c => c.Brand)
+            .Include(c => c.Category)
             .ToListAsync();
     }
 

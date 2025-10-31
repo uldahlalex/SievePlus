@@ -118,54 +118,54 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "Id": {
+          "id": {
             "type": "string"
           },
-          "Name": {
+          "name": {
             "type": "string"
           },
-          "Processor": {
+          "processor": {
             "type": "string"
           },
-          "Price": {
+          "price": {
             "type": "number",
             "format": "decimal"
           },
-          "ScreenSize": {
+          "screenSize": {
             "type": "number",
             "format": "decimal"
           },
-          "Ram": {
+          "ram": {
             "type": "integer",
             "format": "int32"
           },
-          "Storage": {
+          "storage": {
             "type": "integer",
             "format": "int32"
           },
-          "GraphicsCard": {
+          "graphicsCard": {
             "type": "string"
           },
-          "InStock": {
+          "inStock": {
             "type": "boolean"
           },
-          "Rating": {
+          "rating": {
             "type": "number",
             "format": "double"
           },
-          "Sales": {
+          "sales": {
             "type": "integer",
             "format": "int32"
           },
-          "CreatedAt": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "BrandId": {
+          "brandId": {
             "type": "string",
             "nullable": true
           },
-          "Brand": {
+          "brand": {
             "nullable": true,
             "oneOf": [
               {
@@ -173,11 +173,11 @@
               }
             ]
           },
-          "CategoryId": {
+          "categoryId": {
             "type": "string",
             "nullable": true
           },
-          "Category": {
+          "category": {
             "nullable": true,
             "oneOf": [
               {
@@ -191,17 +191,17 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "Id": {
+          "id": {
             "type": "string"
           },
-          "Name": {
+          "name": {
             "type": "string"
           },
-          "CreatedAt": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "Computers": {
+          "computers": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Computer"
@@ -213,17 +213,17 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "Id": {
+          "id": {
             "type": "string"
           },
-          "Name": {
+          "name": {
             "type": "string"
           },
-          "CreatedAt": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "Computers": {
+          "computers": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Computer"
@@ -237,17 +237,17 @@
         "example": "[HttpGet]\npublic async Task<List<Computer>> GetComputers([FromQuery] SievePlusRequest<ComputerQueryModel> request)\n{\n    return await service.GetComputers(request);\n}",
         "additionalProperties": false,
         "properties": {
-          "Filters": {
+          "filters": {
             "type": "string",
             "description": "Filter string (e.g., \"price>=1000,inStock==true\")\nProperties available for filtering are defined in .",
             "nullable": true
           },
-          "Sorts": {
+          "sorts": {
             "type": "string",
             "description": "Sort string (e.g., \"price,-rating\")\nProperties available for sorting are defined in .",
             "nullable": true
           },
-          "Page": {
+          "page": {
             "type": "integer",
             "description": "Page number (1-based)",
             "format": "int32",
@@ -255,7 +255,7 @@
             "minimum": 1.0,
             "nullable": true
           },
-          "PageSize": {
+          "pageSize": {
             "type": "integer",
             "description": "Page size",
             "format": "int32",
@@ -263,7 +263,7 @@
             "minimum": 1.0,
             "nullable": true
           },
-          "QueryModel": {
+          "queryModel": {
             "description": "The query model that defines all available properties for filtering and sorting.\nThis property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger.",
             "nullable": true,
             "oneOf": [
@@ -278,60 +278,60 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "Id": {
+          "id": {
             "type": "string"
           },
-          "Name": {
+          "name": {
             "type": "string"
           },
-          "Processor": {
+          "processor": {
             "type": "string"
           },
-          "Price": {
+          "price": {
             "type": "number",
             "format": "decimal"
           },
-          "ScreenSize": {
+          "screenSize": {
             "type": "number",
             "format": "decimal"
           },
-          "Ram": {
+          "ram": {
             "type": "integer",
             "format": "int32"
           },
-          "Storage": {
+          "storage": {
             "type": "integer",
             "format": "int32"
           },
-          "GraphicsCard": {
+          "graphicsCard": {
             "type": "string"
           },
-          "InStock": {
+          "inStock": {
             "type": "boolean"
           },
-          "Rating": {
+          "rating": {
             "type": "number",
             "format": "double"
           },
-          "CreatedAt": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "BrandName": {
+          "brandName": {
             "type": "string"
           },
-          "CategoryName": {
+          "categoryName": {
             "type": "string"
           },
-          "IsPopular": {
+          "isPopular": {
             "type": "boolean",
             "nullable": true
           },
-          "IsPremium": {
+          "isPremium": {
             "type": "boolean",
             "nullable": true
           },
-          "IsHighPerformance": {
+          "isHighPerformance": {
             "type": "boolean",
             "nullable": true
           }
@@ -343,17 +343,17 @@
         "example": "[HttpGet]\npublic async Task<List<Computer>> GetComputers([FromQuery] SievePlusRequest<ComputerQueryModel> request)\n{\n    return await service.GetComputers(request);\n}",
         "additionalProperties": false,
         "properties": {
-          "Filters": {
+          "filters": {
             "type": "string",
             "description": "Filter string (e.g., \"price>=1000,inStock==true\")\nProperties available for filtering are defined in .",
             "nullable": true
           },
-          "Sorts": {
+          "sorts": {
             "type": "string",
             "description": "Sort string (e.g., \"price,-rating\")\nProperties available for sorting are defined in .",
             "nullable": true
           },
-          "Page": {
+          "page": {
             "type": "integer",
             "description": "Page number (1-based)",
             "format": "int32",
@@ -361,7 +361,7 @@
             "minimum": 1.0,
             "nullable": true
           },
-          "PageSize": {
+          "pageSize": {
             "type": "integer",
             "description": "Page size",
             "format": "int32",
@@ -369,7 +369,7 @@
             "minimum": 1.0,
             "nullable": true
           },
-          "QueryModel": {
+          "queryModel": {
             "description": "The query model that defines all available properties for filtering and sorting.\nThis property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger.",
             "nullable": true,
             "oneOf": [
@@ -389,7 +389,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "ComputerCount": {
+              "computerCount": {
                 "type": "integer",
                 "format": "int32"
               }
@@ -403,17 +403,17 @@
         "example": "[HttpGet]\npublic async Task<List<Computer>> GetComputers([FromQuery] SievePlusRequest<ComputerQueryModel> request)\n{\n    return await service.GetComputers(request);\n}",
         "additionalProperties": false,
         "properties": {
-          "Filters": {
+          "filters": {
             "type": "string",
             "description": "Filter string (e.g., \"price>=1000,inStock==true\")\nProperties available for filtering are defined in .",
             "nullable": true
           },
-          "Sorts": {
+          "sorts": {
             "type": "string",
             "description": "Sort string (e.g., \"price,-rating\")\nProperties available for sorting are defined in .",
             "nullable": true
           },
-          "Page": {
+          "page": {
             "type": "integer",
             "description": "Page number (1-based)",
             "format": "int32",
@@ -421,7 +421,7 @@
             "minimum": 1.0,
             "nullable": true
           },
-          "PageSize": {
+          "pageSize": {
             "type": "integer",
             "description": "Page size",
             "format": "int32",
@@ -429,7 +429,7 @@
             "minimum": 1.0,
             "nullable": true
           },
-          "QueryModel": {
+          "queryModel": {
             "description": "The query model that defines all available properties for filtering and sorting.\nThis property is never used at runtime - it's only here to expose the query model structure to OpenAPI/Swagger.",
             "nullable": true,
             "oneOf": [
@@ -444,17 +444,17 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "Id": {
+          "id": {
             "type": "string"
           },
-          "Name": {
+          "name": {
             "type": "string"
           },
-          "CreatedAt": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "ComputerCount": {
+          "computerCount": {
             "type": "integer",
             "format": "int32"
           }

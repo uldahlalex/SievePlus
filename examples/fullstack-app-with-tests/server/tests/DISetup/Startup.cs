@@ -1,13 +1,7 @@
 using api;
-using dataccess;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Testcontainers.PostgreSql;
 
-namespace tests;
+namespace tests.DISetup;
 
 public class Startup
 {

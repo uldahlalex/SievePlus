@@ -43,8 +43,6 @@ public class Program
         {
             opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
             opts.JsonSerializerOptions.MaxDepth = 128;
-            opts.JsonSerializerOptions.PropertyNamingPolicy = null; // Use exact property names (case-sensitive)
-            opts.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // Accept any casing
         });
         services.AddOpenApiDocument();
         services.AddCors();

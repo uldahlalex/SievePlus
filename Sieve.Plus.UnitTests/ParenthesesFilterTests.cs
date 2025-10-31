@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Sieve.Plus.Models;
 using Sieve.Plus.Services;
 using Sieve.Plus.UnitTests.Entities;
@@ -48,7 +49,10 @@ namespace Sieve.Plus.UnitTests
 
             var result = _processor.Apply(model, _posts);
             var posts = result.ToList();
-
+            _testOutputHelper.WriteLine(JsonSerializer.Serialize(posts, new JsonSerializerOptions()
+            {
+                WriteIndented = true
+            }));
             Assert.Equal(2, posts.Count);
             Assert.Contains(posts, p => p.Id == 2); // Category 1, 150 likes
             Assert.Contains(posts, p => p.Id == 4); // Category 2, 200 likes
