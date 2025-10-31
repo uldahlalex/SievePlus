@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { ComputerStoreClient } from '../src/generated-client';
 import type { ComputerQueryModel, SievePlusRequestOfComputerQueryModel } from '../src/generated-client';
-import { SievePlusQueryBuilder } from '../../../../ts-sieve-plus-query-builder/src'
+import {SievePlusQueryBuilder, UIFilterState} from '../../../../ts-sieve-plus-query-builder/src'
 import {resolveRefs} from "dotnet-json-refs";
 
 const client = new ComputerStoreClient('http://localhost:5284', {fetch});
@@ -44,6 +44,48 @@ it('should fetch with OR filtering', async () => {
     const computers = resolveRefs(computersResponse);
     
     
+});
+
+it('should fetch with UIFilterState', async () => {
+    const maxPrice = 800;
+    const brand = "Asus";
+    
+    const filter: UIFilterState<ComputerQueryModel> = {
+        ranges: {
+            price: {
+                min: 100,
+                max: 5000
+            }
+        },
+        alternatives:  {
+            processor: ["Intel i9", "AMD Ryzen 5"],
+            price: []
+        },
+        equals: {
+            price: 800
+        },
+        sort: {
+            by: "price",
+            desc: true
+        }
+    }
+
+    const allComputers = resolveRefs(await client.getComputers(SievePlusQueryBuilder.create<ComputerQueryModel>().buildSievePlusModel()));
+    const brandComputersCheaperThan = allComputers.filter(c => (c.price < maxPrice && c.brand?.name == brand));
+    console.dir(brandComputersCheaperThan)
+
+    const query = SievePlusQueryBuilder.fromUIFilterState<ComputerQueryModel>(filter)
+        
+
+    const sievePlusModel = query.buildSievePlusModel();
+    console.log(sievePlusModel)
+    const computersResponse = await client.getComputers(sievePlusModel);
+    const computers = resolveRefs(computersResponse);
+    console.dir(computers)
+    // const outsidePriceRangeOrNotOneOfCpus = computers.filter(c => c.price < 500 && c.price > 1000)
+    // if(outsidePriceRangeOrNotOneOfCpus.length>0)
+    //     throw new Error("Filter did not work")
+
 });
 
   // it('should filter computers by brand', async () => {

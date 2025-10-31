@@ -1,0 +1,55 @@
+- Test custom query model props not mapped directly to entity props
+- Test UIFilterState and make design descisions based on this
+    
+    Bug: AND inclusive on equal works like OR in this setting:
+    /usr/bin/node /home/alex/src/SievePlus/examples/fullstack-app-with-tests/client/node_modules/vitest/vitest.mjs --run --reporter /home/alex/.local/share/JetBrains/Toolbox/apps/rider/plugins/javascript-plugin/helpers/vitest-intellij/node_modules/vitest-intellij-reporter-safe.js --testNamePattern=^ ?should fetch with UIFilterState$ /home/alex/src/SievePlus/examples/fullstack-app-with-tests/client/tests/computer-store.test.ts
+    [
+      {
+        id: '0be3d27e-75c1-4396-80b0-2c2f0749d71e',
+        name: 'Acer Rustic Laptop',
+        processor: 'AMD Ryzen 5',
+        price: 645.43,
+        screenSize: 13.3,
+        ram: 32,
+        storage: 1024,
+        graphicsCard: 'AMD Radeon RX 6600',
+        inStock: true,
+        rating: 4.5,
+        sales: 344,
+        createdAt: '2024-12-28T14:31:21.420694Z',
+        brandId: '855b087a-6419-4f2c-a438-3a91bfae350e',
+        brand: {
+          id: '855b087a-6419-4f2c-a438-3a91bfae350e',
+          name: 'Asus',
+          createdAt: '2025-10-31T11:00:03.236738Z',
+          computers: [Array]
+        },
+        categoryId: '8ad16c75-0956-4198-82de-1b2f5a578055',
+        category: {
+          id: '8ad16c75-0956-4198-82de-1b2f5a578055',
+          name: 'Laptop',
+          createdAt: '2025-10-31T11:00:03.283669Z',
+          computers: [Array]
+        }
+      }
+    ]
+    {
+      filters: 'Price>=100,Price<=5000,Price==800,(Processor==Intel i9 || Processor==AMD Ryzen 5)',
+      sorts: '-Price',
+      page: 1,
+      pageSize: 10,
+      queryModel: undefined
+    }
+    []
+
+Possible other bug: queryModel is transmitted over json but should just act as a TS object since it seems redundant:
+{
+  filters: 'price>800 || brandName@=Asus',
+  sorts: '',
+  page: 1,
+  pageSize: 10,
+  queryModel: undefined
+}
+
+    
+- routing wrapper for react router to tie together with UIFilterState / custom hook to generate the UIFilterState / etc?
